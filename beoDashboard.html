@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BEO Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#2563eb;--accent-dark:#1d4ed8;--body-bg:#f8fafc;--card-bg:#fff;
+  --border:#e2e8f0;--text-primary:#0f172a;--text-secondary:#64748b;--text-muted:#94a3b8;
+  --radius:12px;--radius-sm:8px;
+  --green:#15803d;--red:#dc2626;--orange:#d97706;--navy:#1e3a5f;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--body-bg);color:var(--text-primary);min-height:100vh;padding:28px 28px 56px}
+
+/* PAGE HEADER */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px}
+.page-title{font-size:22px;font-weight:800;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--text-secondary)}
+.block-select{border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 32px 8px 14px;font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;appearance:none;outline:none;font-family:'DM Sans',sans-serif}
+
+/* STAT CARDS */
+.stat-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px}
+.sc{border-radius:var(--radius);padding:18px 16px;position:relative;overflow:hidden;min-width:0}
+.sc-navy {background:#1e3a5f;color:#fff}
+.sc-white{background:var(--card-bg);border:1px solid var(--border)}
+.sc-green{background:#15803d;color:#fff}
+.sc-red  {background:#b91c1c;color:#fff}
+.sc-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.8;line-height:1.3;margin-bottom:5px}
+.sc-white .sc-label{color:var(--text-secondary);opacity:1}
+.sc-value{font-size:28px;font-weight:800;line-height:1;font-family:'Space Grotesk',sans-serif}
+.sc-white .sc-value{color:var(--text-primary)}
+.sc-sub{font-size:11px;opacity:.75;margin-top:3px}
+.sc-white .sc-sub{color:var(--text-secondary);opacity:1}
+.sc-icon{position:absolute;right:12px;top:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
+.sc-white .sc-icon{background:#f1f5f9}
+
+/* TABS */
+.tab-row{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;flex-wrap:wrap}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:color .15s,border-color .15s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.tab:hover:not(.active){color:var(--text-primary)}
+
+/* PANEL */
+.panel{display:none}
+.panel.show{display:block}
+
+/* TABLE CARD */
+.table-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.table-top-title{font-size:15px;font-weight:700}
+.table-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search-wrap{display:flex;align-items:center;gap:8px;background:var(--body-bg);border:1px solid var(--border);border-radius:8px;padding:7px 12px;min-width:200px}
+.search-wrap input{border:none;background:none;outline:none;font-size:13px;color:var(--text-primary);width:100%;font-family:'DM Sans',sans-serif}
+.filter-sel{border:1px solid var(--border);border-radius:8px;padding:7px 28px 7px 12px;font-size:13px;color:var(--text-primary);cursor:pointer;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;appearance:none;font-family:'DM Sans',sans-serif;outline:none}
+
+/* TABLE */
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:900px}
+thead th{padding:10px 12px;font-size:10px;font-weight:700;color:var(--text-secondary);text-align:left;letter-spacing:.07em;text-transform:uppercase;background:#f8fafc;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f8faff}
+tbody td{padding:12px 12px;font-size:12.5px;vertical-align:middle;white-space:nowrap}
+
+/* Row number */
+.td-num{font-weight:700;color:var(--text-muted);width:30px;font-size:13px;text-align:center}
+.td-school{font-weight:600;color:var(--text-primary);white-space:normal;max-width:140px}
+.td-udise{font-family:'Space Grotesk',monospace;font-size:11px;color:var(--text-secondary)}
+
+/* Type badges */
+.type-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;white-space:nowrap}
+.tb-private{background:#f1f5f9;color:#475569;border:1px solid var(--border)}
+.tb-govt   {background:#1e3a5f;color:#fff}
+.tb-aided  {background:#ede9fe;color:#5b21b6}
+
+/* Fraction cells */
+.frac-green {color:#15803d;font-weight:600}
+.frac-orange{color:#d97706;font-weight:600}
+.frac-red   {color:#dc2626;font-weight:600}
+.check-green{color:#15803d;font-weight:700;font-size:14px}
+.cross-red  {color:#dc2626;font-weight:700;font-size:13px}
+
+/* Score bar */
+.score-wrap{display:flex;align-items:center;gap:7px}
+.score-bar-bg{width:50px;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;flex-shrink:0}
+.score-bar-fill{height:100%;border-radius:3px}
+.score-pct{font-size:12px;font-weight:700;min-width:32px}
+
+/* Status chips */
+.schip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.schip::before{content:'';width:5px;height:5px;border-radius:50%}
+.s-compliant{background:#dcfce7;color:#15803d}
+.s-compliant::before{background:#16a34a}
+.s-warning  {background:#fef3c7;color:#92400e}
+.s-warning::before{background:#d97706}
+.s-violation{background:#fee2e2;color:#b91c1c}
+.s-violation::before{background:#dc2626}
+
+/* Arrow btn */
+.arrow-btn{background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:4px;transition:background .12s}
+.arrow-btn:hover{background:#f1f5f9;color:var(--accent)}
+
+/* PENDING ACTIONS */
+.pending-list{display:flex;flex-direction:column;gap:10px}
+.pending-item{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;transition:background .1s}
+.pending-item:hover{background:#fafafa}
+.pending-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pi-red   {background:#fee2e2}
+.pi-orange{background:#fef3c7}
+.pi-blue  {background:#dbeafe}
+.pending-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.pending-desc {font-size:12px;color:var(--text-secondary);line-height:1.5}
+.pending-meta {font-size:11px;color:var(--text-muted);margin-top:4px;display:flex;align-items:center;gap:8px}
+.pending-actions{margin-left:auto;display:flex;gap:8px;flex-shrink:0}
+.btn-resolve{padding:6px 14px;background:#15803d;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-view{padding:6px 12px;background:#fff;color:var(--accent);border:1px solid #bfdbfe;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* ANALYTICS */
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.an-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.an-title{font-size:14px;font-weight:700;margin-bottom:14px}
+.an-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-bottom:10px}
+.an-row:last-child{margin-bottom:0}
+.an-label{color:var(--text-secondary)}
+.an-bar-bg{flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin:0 10px}
+.an-bar-fill{height:100%;border-radius:3px}
+.an-val{font-weight:700;min-width:32px;text-align:right}
+
+/* RESPONSIVE */
+@media(max-width:1100px){
+  .stat-cards{grid-template-columns:repeat(3,1fr)}
+  .analytics-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:780px){
+  body{padding:16px 16px 40px}
+  .page-title{font-size:18px}
+  .page-header{flex-direction:column}
+  .stat-cards{grid-template-columns:repeat(2,1fr);gap:10px}
+  .sc-value{font-size:22px}
+  .table-top{flex-direction:column;align-items:flex-start}
+  .table-controls{width:100%}
+  .search-wrap{flex:1;min-width:0}
+  .analytics-grid{grid-template-columns:1fr}
+  .pending-item{flex-wrap:wrap}
+  .pending-actions{width:100%;margin-left:0;margin-top:8px}
+}
+@media(max-width:440px){
+  .stat-cards{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div>
+    <div class="page-title">BEO Dashboard</div>
+    <div class="page-sub">Block Education Officer — School Transport Monitoring</div>
+  </div>
+  <select class="block-select" onchange="updateBlock(this.value)">
+    <option>Sadar Block</option>
+    <option>Mohanlalganj Block</option>
+    <option>Malihabad Block</option>
+    <option>Kakori Block</option>
+    <option>Chinhat Block</option>
+    <option>Bakshi Ka Talab Block</option>
+  </select>
+</div>
+
+<!-- STAT CARDS -->
+<div class="stat-cards">
+  <div class="sc sc-navy">
+    <div class="sc-label">Schools in Block</div>
+    <div class="sc-value">10</div>
+    <div class="sc-icon"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+  </div>
+  <div class="sc sc-white">
+    <div class="sc-label">Total Vehicles</div>
+    <div class="sc-value">95</div>
+    <div class="sc-icon"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+  </div>
+  <div class="sc sc-green">
+    <div class="sc-label">Compliant Vehicles</div>
+    <div class="sc-value">65</div>
+    <div class="sc-sub">68%</div>
+    <div class="sc-icon"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+  </div>
+  <div class="sc sc-red">
+    <div class="sc-label">Total Violations</div>
+    <div class="sc-value">41</div>
+    <div class="sc-icon"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+  </div>
+  <div class="sc sc-white">
+    <div class="sc-label">Committees Formed</div>
+    <div class="sc-value" style="font-size:22px">6/10</div>
+    <div class="sc-icon"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+  </div>
+  <div class="sc sc-white">
+    <div class="sc-label">Affidavits Done</div>
+    <div class="sc-value" style="font-size:22px">4/10</div>
+    <div class="sc-icon"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg></div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-row">
+  <button class="tab active" onclick="switchTab(this,'schools')">All Schools</button>
+  <button class="tab" onclick="switchTab(this,'pending')">Pending Actions</button>
+  <button class="tab" onclick="switchTab(this,'analytics')">Analytics</button>
+</div>
+
+<!-- ═══ TAB: ALL SCHOOLS ═══ -->
+<div class="panel show" id="panel-schools">
+  <div class="table-card">
+    <div class="table-top">
+      <div class="table-top-title">School-wise Compliance — Sadar Block</div>
+      <div class="table-controls">
+        <div class="search-wrap">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Search school / UDISE..." oninput="filterSchools(this.value)"/>
+        </div>
+        <select class="filter-sel" onchange="filterByStatus(this.value)">
+          <option value="all">All Status</option>
+          <option value="compliant">Compliant</option>
+          <option value="warning">Warning</option>
+          <option value="violation">Violation</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>School Name</th>
+            <th>UDISE</th>
+            <th>Type</th>
+            <th>Buses</th>
+            <th>Compliant</th>
+            <th>GPS</th>
+            <th>CCTV</th>
+            <th>Drivers ✓</th>
+            <th>Committee</th>
+            <th>Affidavit</th>
+            <th>Score</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="schoolsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: PENDING ACTIONS ═══ -->
+<div class="panel" id="panel-pending">
+  <div class="pending-list">
+    <div class="pending-item">
+      <div class="pending-icon pi-red">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#dc2626" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="pending-title">Ryan International — No Safety Committee</div>
+        <div class="pending-desc">School has not formed mandatory safety committee as per GO-2024. Deadline was 2026-03-01.</div>
+        <div class="pending-meta">
+          <span>🏫 Ryan International</span>
+          <span>UDISE: 09012345684</span>
+          <span style="color:#dc2626;font-weight:600">Overdue 20 days</span>
+        </div>
+      </div>
+      <div class="pending-actions">
+        <button class="btn-view">View</button>
+        <button class="btn-resolve">Send Notice</button>
+      </div>
+    </div>
+    <div class="pending-item">
+      <div class="pending-icon pi-red">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#dc2626" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="pending-title">St. Francis College — Fitness Expired (4 buses)</div>
+        <div class="pending-desc">4 out of 6 buses have expired fitness certificates. Vehicles should not operate until renewed.</div>
+        <div class="pending-meta">
+          <span>🏫 St. Francis College</span>
+          <span>UDISE: 09012345685</span>
+          <span style="color:#dc2626;font-weight:600">Critical</span>
+        </div>
+      </div>
+      <div class="pending-actions">
+        <button class="btn-view">View</button>
+        <button class="btn-resolve">Escalate</button>
+      </div>
+    </div>
+    <div class="pending-item">
+      <div class="pending-icon pi-orange">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#d97706" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="pending-title">City Montessori — Affidavit Pending</div>
+        <div class="pending-desc">School principal has not submitted mandatory safety affidavit for the current academic year 2025-26.</div>
+        <div class="pending-meta">
+          <span>🏫 City Montessori School</span>
+          <span>UDISE: 09012345683</span>
+          <span style="color:#d97706;font-weight:600">Due: 2026-03-31</span>
+        </div>
+      </div>
+      <div class="pending-actions">
+        <button class="btn-view">View</button>
+        <button class="btn-resolve">Remind</button>
+      </div>
+    </div>
+    <div class="pending-item">
+      <div class="pending-icon pi-red">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#dc2626" stroke-width="2"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="pending-title">Public Inter College — GPS Non-Functional (all 3 buses)</div>
+        <div class="pending-desc">All 3 buses showing GPS offline. No real-time tracking possible. Immediate repair required.</div>
+        <div class="pending-meta">
+          <span>🏫 Public Inter College</span>
+          <span>UDISE: 09012345686</span>
+          <span style="color:#dc2626;font-weight:600">High Priority</span>
+        </div>
+      </div>
+      <div class="pending-actions">
+        <button class="btn-view">View</button>
+        <button class="btn-resolve">Issue Notice</button>
+      </div>
+    </div>
+    <div class="pending-item">
+      <div class="pending-icon pi-orange">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#d97706" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.82 19.79 19.79 0 01.1 1.18 2 2 0 012.11 0h3a2 2 0 012 1.72"/></svg>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="pending-title">GD Goenka — CCTV Non-Functional (4 buses)</div>
+        <div class="pending-desc">4 out of 10 buses have non-functional CCTV cameras. School notified on 2026-03-10, no action taken.</div>
+        <div class="pending-meta">
+          <span>🏫 GD Goenka School</span>
+          <span>UDISE: 09012345682</span>
+          <span style="color:#d97706;font-weight:600">10 days overdue</span>
+        </div>
+      </div>
+      <div class="pending-actions">
+        <button class="btn-view">View</button>
+        <button class="btn-resolve">Escalate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: ANALYTICS ═══ -->
+<div class="panel" id="panel-analytics">
+  <div class="analytics-grid">
+    <div class="an-card">
+      <div class="an-title">Compliance by School Type</div>
+      <div class="an-row">
+        <span class="an-label">Private (7 schools)</span>
+        <div class="an-bar-bg"><div class="an-bar-fill" style="width:68%;background:#d97706"></div></div>
+        <span class="an-val" style="color:#d97706">68%</span>
+      </div>
+      <div class="an-row">
+        <span class="an-label">Government (3 schools)</span>
+        <div class="an-bar-bg"><div class="an-bar-fill" style="width:75%;background:#d97706"></div></div>
+        <span class="an-val" style="color:#d97706">75%</span>
+      </div>
+    </div>
+    <div class="an-card">
+      <div class="an-title">Safety Equipment Coverage</div>
+      <div class="an-row">
+        <span class="an-label">GPS Functional</span>
+        <div class="an-bar-bg"><div class="an-bar-fill" style="width:72%;background:#d97706"></div></div>
+        <span class="an-val" style="color:#d97706">72%</span>
+      </div>
+      <div class="an-row">
+        <span class="an-label">CCTV Functional</span>
+        <div class="an-bar-bg"><div class="an-bar-fill" style="width:64%;background:#d97706"></div></div>
+        <span class="an-val" style="color:#d97706">64%</span>
+      </div>
+      <div class="an-row">
+        <span class="an-label">Speed Governor</span>
+        <div class="an-bar-bg"><div class="an-bar-fill" style="width:80%;background:#15803d"></div></div>
+        <span class="an-val" style="color:#15803d">80%</span>
+      </div>
+      <div class="an-row">
+        <span class="an-label">Fire Extinguisher</span>
+        <div class="an-bar-bg"><div class="an-bar-fill" style="width:88%;background:#15803d"></div></div>
+        <span class="an-val" style="color:#15803d">88%</span>
+      </div>
+      <div class="an-row">
+        <span class="an-label">First Aid Kit</span>
+        <div class="an-bar-bg"><div class="an-bar-fill" style="width:82%;background:#15803d"></div></div>
+        <span class="an-val" style="color:#15803d">82%</span>
+      </div>
+    </div>
+    <div class="an-card">
+      <div class="an-title">Document Status</div>
+      <div class="an-row">
+        <span class="an-label">Fitness Valid</span>
+        <div class="an-bar-bg"><div class="an-bar-fill" style="width:74%;background:#d97706"></div></div>
+        <span class="an-val" style="color:#d97706">74%</span>
+      </div>
+      <div class="an-row">
+        <span class="an-label">Insurance Valid</span>
+        <div class="an-bar-bg"><div class="an-bar-fill" style="width:78%;background:#d97706"></div></div>
+        <span class="an-val" style="color:#d97706">78%</span>
+      </div>
+      <div class="an-row">
+        <span class="an-label">PUC Valid</span>
+        <div class="an-bar-bg"><div class="an-bar-fill" style="width:85%;background:#15803d"></div></div>
+        <span class="an-val" style="color:#15803d">85%</span>
+      </div>
+      <div class="an-row">
+        <span class="an-label">Permit Valid</span>
+        <div class="an-bar-bg"><div class="an-bar-fill" style="width:91%;background:#15803d"></div></div>
+        <span class="an-val" style="color:#15803d">91%</span>
+      </div>
+      <div class="an-row">
+        <span class="an-label">DL Valid</span>
+        <div class="an-bar-bg"><div class="an-bar-fill" style="width:88%;background:#15803d"></div></div>
+        <span class="an-val" style="color:#15803d">88%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SCHOOLS DATA ──
+const schools = [
+  {n:1, name:'Delhi Public School',     udise:'09012345678', type:'private', buses:12, comp:'11/12', gps:'12/12', cctv:'12/12', drivers:'12/12', committee:true,  affidavit:true,  score:96, status:'compliant'},
+  {n:2, name:'Modern Academy',          udise:'09012345679', type:'private', buses:7,  comp:'7/7',   gps:'7/7',   cctv:'7/7',   drivers:'7/7',   committee:true,  affidavit:true,  score:98, status:'compliant'},
+  {n:3, name:'Kendriya Vidyalaya',       udise:'09012345680', type:'govt',    buses:4,  comp:'3/4',   gps:'4/4',   cctv:'3/4',   drivers:'4/4',   committee:true,  affidavit:true,  score:91, status:'compliant'},
+  {n:4, name:'Army Public School',       udise:'09012345681', type:'private', buses:8,  comp:'6/8',   gps:'7/8',   cctv:'5/8',   drivers:'7/8',   committee:true,  affidavit:false, score:82, status:'warning'},
+  {n:5, name:'GD Goenka School',         udise:'09012345682', type:'private', buses:10, comp:'7/10',  gps:'8/10',  cctv:'6/10',  drivers:'8/10',  committee:true,  affidavit:false, score:75, status:'warning'},
+  {n:6, name:'City Montessori School',   udise:'09012345683', type:'private', buses:28, comp:'18/28', gps:'20/28', cctv:'15/28', drivers:'22/28', committee:false, affidavit:false, score:64, status:'warning'},
+  {n:7, name:'Ryan International',       udise:'09012345684', type:'private', buses:15, comp:'8/15',  gps:'9/15',  cctv:'6/15',  drivers:'10/15', committee:false, affidavit:false, score:55, status:'violation'},
+  {n:8, name:'St. Francis College',      udise:'09012345685', type:'private', buses:6,  comp:'2/6',   gps:'3/6',   cctv:'2/6',   drivers:'4/6',   committee:false, affidavit:false, score:42, status:'violation'},
+  {n:9, name:'Public Inter College',     udise:'09012345686', type:'govt',    buses:3,  comp:'1/3',   gps:'1/3',   cctv:'0/3',   drivers:'2/3',   committee:false, affidavit:false, score:35, status:'violation'},
+  {n:10,name:'Navyug Vidyalaya',         udise:'09012345687', type:'govt',    buses:2,  comp:'2/2',   gps:'2/2',   cctv:'2/2',   drivers:'2/2',   committee:true,  affidavit:true,  score:100,status:'compliant'},
+];
+
+function getFracClass(frac){
+  const [a,b]=frac.split('/').map(Number);
+  const p=a/b;
+  if(p>=0.9)return'frac-green';if(p>=0.7)return'frac-orange';return'frac-red';
+}
+function getScoreColor(s){
+  if(s>=85)return'#15803d';if(s>=70)return'#d97706';return'#dc2626';
+}
+function getStatusChip(s){
+  if(s==='compliant')return'<span class="schip s-compliant">Compliant</span>';
+  if(s==='warning')  return'<span class="schip s-warning">Warning</span>';
+  return '<span class="schip s-violation">Violation</span>';
+}
+
+let searchQ='', statusF='all';
+
+function renderSchools(){
+  const tb = document.getElementById('schoolsBody');
+  const filtered = schools.filter(s=>{
+    const sq = s.name.toLowerCase().includes(searchQ)||s.udise.includes(searchQ);
+    const sf = statusF==='all'||s.status===statusF;
+    return sq&&sf;
+  });
+  tb.innerHTML = filtered.map(s=>`
+    <tr>
+      <td class="td-num">${s.n}</td>
+      <td class="td-school">${s.name}</td>
+      <td class="td-udise">${s.udise}</td>
+      <td><span class="type-badge ${s.type==='govt'?'tb-govt':s.type==='aided'?'tb-aided':'tb-private'}">${s.type==='govt'?'Government':s.type==='aided'?'Aided':'Private'}</span></td>
+      <td style="font-weight:600">${s.buses}</td>
+      <td><span class="${getFracClass(s.comp)}">${s.comp}</span></td>
+      <td><span class="${getFracClass(s.gps)}">${s.gps}</span></td>
+      <td><span class="${getFracClass(s.cctv)}">${s.cctv}</span></td>
+      <td>${s.drivers}</td>
+      <td>${s.committee?'<span class="check-green">✓</span>':'<span class="cross-red">✗</span>'}</td>
+      <td>${s.affidavit?'<span class="check-green">✓</span>':'<span class="cross-red">✗</span>'}</td>
+      <td>
+        <div class="score-wrap">
+          <div class="score-bar-bg"><div class="score-bar-fill" style="width:${s.score}%;background:${getScoreColor(s.score)}"></div></div>
+          <span class="score-pct" style="color:${getScoreColor(s.score)}">${s.score}%</span>
+        </div>
+      </td>
+      <td>${getStatusChip(s.status)}</td>
+      <td><button class="arrow-btn"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button></td>
+    </tr>`).join('');
+}
+
+function filterSchools(q){searchQ=q.toLowerCase();renderSchools();}
+function filterByStatus(v){statusF=v;renderSchools();}
+renderSchools();
+
+function switchTab(el,id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));
+  document.getElementById('panel-'+id).classList.add('show');
+}
+
+function updateBlock(val){
+  document.querySelector('.table-top-title').textContent=`School-wise Compliance — ${val}`;
+}
+</script>
+</body>
+</html>
