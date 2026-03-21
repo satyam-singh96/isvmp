@@ -461,9 +461,13 @@
       <i class="fa-solid fa-trophy"></i> 
       <span class="nav-label">District Leaderboard</span>
     </a>
-    <a class="nav-item" href="alertNotification.html" data-label="Alert Notification">
+    <a class="nav-item" href="alertNotification.html" data-label="Alerts">
       <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></span>
-      <span class="nav-label">Alert Notification</span>
+      <span class="nav-label">Alerts</span>
+    </a>
+    <a class="nav-item" href="alertNotification.html" data-label="Notifications">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></span>
+      <span class="nav-label">Notifications</span>
     </a>
     <a class="nav-item" href="mobileInspection.html" data-label="Mobile Inspection">
       <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
@@ -538,17 +542,15 @@
           </svg>
         </div>
         <div>
-          <a href = "alertNotification.html">
-        <button class="notif-btn" title="Notifications" aria-label="Notifications">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-            <path d="M13.73 21a2 2 0 01-3.46 0"/>
-          </svg>
-          <span class="notif-dot"></span>
-        </button>
-        </a>
+          <button class="notif-btn" id="notifBtn" title="Notifications" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 01-3.46 0"/>
+            </svg>
+            <span class="notif-dot"></span>
+          </button>
         </div>
-        <div class="user-section">
+        <div class="user-section" id="userBtn">
           <div class="user-avatar">TC</div>
           <span class="user-name">Admin</span>
         </div>
@@ -616,6 +618,38 @@
           toggleBtn.classList.remove('active');
         }
       });
+    });
+
+    /* ── Notification button click ── */
+    const notifBtn = document.getElementById('notifBtn');
+    notifBtn.addEventListener('click', function() {
+      // Load alertNotification.html into iframe
+      frame.src = 'alertNotification.html';
+
+      // Highlight the corresponding nav-item
+      document.querySelectorAll('.sidebar .nav-item').forEach(l => l.classList.remove('active'));
+      const alertNavItem = document.querySelector('.sidebar .nav-item[href="alertNotification.html"]');
+      if (alertNavItem) {
+        alertNavItem.classList.add('active');
+        // Scroll to the nav-item in sidebar
+        alertNavItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+
+    /* ── User section click ── */
+    const userBtn = document.getElementById('userBtn');
+    userBtn.addEventListener('click', function() {
+      // Load setting.html into iframe
+      frame.src = 'setting.html';
+
+      // Highlight the corresponding nav-item
+      document.querySelectorAll('.sidebar .nav-item').forEach(l => l.classList.remove('active'));
+      const settingsNavItem = document.querySelector('.sidebar .nav-item[href="setting.html"]');
+      if (settingsNavItem) {
+        settingsNavItem.classList.add('active');
+        // Scroll to the nav-item in sidebar
+        settingsNavItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     });
 
     /* ── Handle resize ── */
