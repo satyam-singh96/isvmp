@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>School Transport Safety Committee</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#2563eb;--accent-dark:#1d4ed8;--body-bg:#f8fafc;--card-bg:#fff;
+  --border:#e2e8f0;--text-primary:#0f172a;--text-secondary:#64748b;--text-muted:#94a3b8;
+  --radius:12px;--radius-sm:8px;
+  --green:#15803d;--red:#dc2626;--orange:#d97706;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--body-bg);color:var(--text-primary);min-height:100vh;padding:28px 28px 56px}
+
+/* PAGE HEADER */
+.page-header{margin-bottom:22px}
+.page-title{font-size:22px;font-weight:800;margin-bottom:4px}
+.page-sub  {font-size:13px;color:var(--text-secondary)}
+
+/* STAT CARDS */
+.stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.sc{border-radius:var(--radius);padding:20px 18px;position:relative;overflow:hidden;min-width:0}
+.sc-white {background:var(--card-bg);border:1px solid var(--border)}
+.sc-green {background:#15803d;color:#fff}
+.sc-red   {background:#b91c1c;color:#fff}
+.sc-orange{background:#d97706;color:#fff}
+.sc-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.8;margin-bottom:6px}
+.sc-white .sc-label{color:var(--text-secondary);opacity:1}
+.sc-value{font-size:36px;font-weight:800;line-height:1;font-family:'Space Grotesk',sans-serif}
+.sc-white .sc-value{color:var(--text-primary)}
+.sc-icon{position:absolute;right:14px;top:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
+.sc-white .sc-icon{background:#f1f5f9}
+
+/* OVERVIEW TABLE CARD */
+.table-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:28px}
+.table-card-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.table-card-title{font-size:15px;font-weight:700}
+.table-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search-wrap{display:flex;align-items:center;gap:8px;background:var(--body-bg);border:1px solid var(--border);border-radius:8px;padding:7px 12px;min-width:200px}
+.search-wrap input{border:none;background:none;outline:none;font-size:13px;color:var(--text-primary);width:100%;font-family:'DM Sans',sans-serif}
+.filter-sel{border:1px solid var(--border);border-radius:8px;padding:7px 28px 7px 12px;font-size:13px;color:var(--text-primary);cursor:pointer;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;appearance:none;font-family:'DM Sans',sans-serif;outline:none}
+
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:600px}
+thead th{padding:10px 16px;font-size:10px;font-weight:700;color:var(--text-secondary);text-align:left;letter-spacing:.07em;text-transform:uppercase;background:#f8fafc;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f8faff}
+tbody td{padding:14px 16px;font-size:13px;vertical-align:middle;white-space:nowrap}
+.td-school{font-weight:700;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-udise{font-family:'Space Grotesk',monospace;font-size:11.5px;color:var(--text-secondary)}
+.mem-green {color:#15803d;font-weight:600}
+.mem-orange{color:#d97706;font-weight:600}
+.mem-red   {color:#dc2626;font-weight:600}
+
+/* Due chips */
+.due-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+.due-chip::before{content:'';width:6px;height:6px;border-radius:50%}
+.due-ok  {background:#fef3c7;color:#92400e}
+.due-ok::before{background:#d97706}
+.due-good{background:#dcfce7;color:#15803d}
+.due-good::before{background:#16a34a}
+.due-over{background:#fee2e2;color:#b91c1c}
+.due-over::before{background:#dc2626}
+
+/* Status chips */
+.schip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.schip::before{content:'';width:6px;height:6px;border-radius:50%}
+.s-compliant{background:#dcfce7;color:#15803d}
+.s-compliant::before{background:#16a34a}
+.s-warning  {background:#fef3c7;color:#92400e}
+.s-warning::before{background:#d97706}
+.s-violation{background:#fee2e2;color:#b91c1c}
+.s-violation::before{background:#dc2626}
+.pend-red{color:#dc2626;font-weight:700}
+.pend-zero{color:var(--text-muted)}
+
+.arrow-btn{background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;padding:4px;border-radius:4px;transition:background .12s}
+.arrow-btn:hover{background:#f1f5f9;color:var(--accent)}
+
+/* ── SCHOOL DETAIL ── */
+.detail-section{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.detail-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:18px 20px;border-bottom:1px solid var(--border)}
+.detail-title{font-size:18px;font-weight:800;margin-bottom:3px}
+.detail-meta {font-size:13px;color:var(--text-secondary)}
+.detail-select{border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 32px 8px 14px;font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;appearance:none;outline:none;font-family:'DM Sans',sans-serif;min-width:220px}
+
+/* Sub-tabs */
+.detail-tabs{display:flex;padding:0 20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.dtab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:color .15s,border-color .15s}
+.dtab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.dtab:hover:not(.active){color:var(--text-primary)}
+
+/* Members panel */
+.members-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.members-title{font-size:14px;font-weight:700}
+.btn-add{display:flex;align-items:center;gap:7px;background:var(--accent-dark);color:#fff;border:none;border-radius:var(--radius-sm);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s}
+.btn-add:hover{background:#1e40af}
+
+/* Member table */
+.mtable{min-width:700px}
+.mtable tbody td{padding:13px 16px;font-size:13px}
+.td-num{font-weight:600;color:var(--text-muted);text-align:center;width:36px}
+.td-name{font-weight:600}
+
+.role-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;white-space:nowrap}
+.rb-chair {background:#1e3a5f;color:#fff}
+.rb-member{background:#f1f5f9;color:#475569;border:1px solid var(--border)}
+
+.filled-badge{background:#dcfce7;color:#15803d;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700}
+.vacant-badge{background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700}
+
+.contact-cell{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-secondary)}
+
+/* Meeting / Composition panels */
+.meeting-list{padding:20px;display:flex;flex-direction:column;gap:10px}
+.meeting-item{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff}
+.m-date{font-family:'Space Grotesk',monospace;font-size:13px;font-weight:700;min-width:90px}
+.m-desc{flex:1;font-size:13px}
+.ms-done    {color:#15803d;font-weight:600;font-size:12px}
+.ms-upcoming{color:#2563eb;font-weight:600;font-size:12px}
+.ms-overdue {color:#dc2626;font-weight:600;font-size:12px}
+
+.comp-list{padding:20px;display:flex;flex-direction:column;gap:8px}
+.comp-item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff}
+.comp-role{font-size:13px;font-weight:600}
+.comp-dept{font-size:12px;color:var(--text-secondary);margin-top:2px}
+
+/* Panel toggle */
+.dpanel{display:none}
+.dpanel.show{display:block}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .stat-cards{grid-template-columns:repeat(2,1fr)}
+  body{padding:16px 16px 40px}
+  .page-title{font-size:18px}
+  .table-card-top{flex-direction:column;align-items:flex-start}
+  .table-controls{width:100%}
+  .search-wrap{flex:1;min-width:0}
+}
+@media(max-width:520px){
+  .stat-cards{grid-template-columns:1fr 1fr}
+  .sc-value{font-size:28px}
+  .detail-header{flex-direction:column}
+  .detail-select{width:100%}
+  .members-top{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="page-title">School Transport Safety Committee</div>
+  <div class="page-sub">Rule 222G — School-Level Committee Constitution, Members &amp; Meeting Compliance</div>
+</div>
+
+<!-- STAT CARDS -->
+<div class="stat-cards">
+  <div class="sc sc-white">
+    <div class="sc-label">Total Schools</div>
+    <div class="sc-value">4</div>
+    <div class="sc-icon"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+  </div>
+  <div class="sc sc-green">
+    <div class="sc-label">Fully Compliant</div>
+    <div class="sc-value">2</div>
+    <div class="sc-icon"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+  </div>
+  <div class="sc sc-red">
+    <div class="sc-label">Meetings Pending</div>
+    <div class="sc-value">4</div>
+    <div class="sc-icon"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+  </div>
+  <div class="sc sc-orange">
+    <div class="sc-label">Incomplete Committees</div>
+    <div class="sc-value">2</div>
+    <div class="sc-icon"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+  </div>
+</div>
+
+<!-- OVERVIEW TABLE -->
+<div class="table-card">
+  <div class="table-card-top">
+    <div class="table-card-title">School-Level Committee Compliance Overview</div>
+    <div class="table-controls">
+      <div class="search-wrap">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search school or UDISE..." oninput="filterTable(this.value)"/>
+      </div>
+      <select class="filter-sel" onchange="filterDistrict(this.value)">
+        <option value="all">All Districts</option>
+        <option>Lucknow</option>
+        <option>Kanpur</option>
+        <option>Agra</option>
+        <option>Varanasi</option>
+      </select>
+    </div>
+  </div>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>School</th>
+          <th>UDISE</th>
+          <th>District</th>
+          <th>Members</th>
+          <th>Last Meeting</th>
+          <th>Next Due</th>
+          <th>Pending</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="overviewBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SCHOOL DETAIL SECTION -->
+<div class="detail-section">
+  <div class="detail-header">
+    <div>
+      <div class="detail-title" id="detailTitle">Delhi Public School, Lucknow</div>
+      <div class="detail-meta" id="detailMeta">UDISE: 09012345678 · Lucknow · Sadar</div>
+    </div>
+    <select class="detail-select" id="schoolSelect" onchange="selectSchool(this.value)">
+      <option>Delhi Public School, Lucknow</option>
+      <option>City Montessori School, Kanpur</option>
+      <option>St. Francis College, Agra</option>
+      <option>Army Public School, Varanasi</option>
+    </select>
+  </div>
+
+  <div class="detail-tabs">
+    <button class="dtab active" onclick="switchDTab(this,'members')">
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      <span id="membersTabLabel">Members (10/10)</span>
+    </button>
+    <button class="dtab" onclick="switchDTab(this,'meetings')">
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Meeting Schedule
+    </button>
+    <button class="dtab" onclick="switchDTab(this,'composition')">
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Prescribed Composition
+    </button>
+  </div>
+
+  <!-- MEMBERS PANEL -->
+  <div class="dpanel show" id="dpanel-members">
+    <div class="members-top">
+      <div class="members-title" id="membersTitle">Committee Members — Delhi Public School, Lucknow</div>
+      <button class="btn-add">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add / Update Member
+      </button>
+    </div>
+    <div class="table-scroll">
+      <table class="mtable">
+        <thead>
+          <tr>
+            <th style="text-align:center">#</th>
+            <th>Role</th>
+            <th>Name</th>
+            <th>Designation</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="membersBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MEETINGS PANEL -->
+  <div class="dpanel" id="dpanel-meetings">
+    <div class="meeting-list" id="meetingList"></div>
+  </div>
+
+  <!-- COMPOSITION PANEL -->
+  <div class="dpanel" id="dpanel-composition">
+    <div class="comp-list">
+      <div class="comp-item"><div><div class="comp-role">Chairperson</div><div class="comp-dept">Principal of the School</div></div><span class="filled-badge">Filled</span></div>
+      <div class="comp-item"><div><div class="comp-role">Member</div><div class="comp-dept">Nayab Tehsildar (Local Administration Representative)</div></div><span class="filled-badge">Filled</span></div>
+      <div class="comp-item"><div><div class="comp-role">Member</div><div class="comp-dept">Guardian Representative (Parent)</div></div><span class="filled-badge">Filled</span></div>
+      <div class="comp-item"><div><div class="comp-role">Member</div><div class="comp-dept">Guardian Representative (Parent)</div></div><span class="filled-badge">Filled</span></div>
+      <div class="comp-item"><div><div class="comp-role">Member</div><div class="comp-dept">SHO — Local Police Station</div></div><span class="filled-badge">Filled</span></div>
+      <div class="comp-item"><div><div class="comp-role">Member</div><div class="comp-dept">Assistant Basic Shiksha Adhikari</div></div><span class="filled-badge">Filled</span></div>
+      <div class="comp-item"><div><div class="comp-role">Member</div><div class="comp-dept">Sub Divisional Inspector of Schools</div></div><span class="filled-badge">Filled</span></div>
+      <div class="comp-item"><div><div class="comp-role">Member</div><div class="comp-dept">Vehicle Operator Representative</div></div><span class="filled-badge">Filled</span></div>
+      <div class="comp-item"><div><div class="comp-role">Member</div><div class="comp-dept">Vehicle Operator Representative</div></div><span class="filled-badge">Filled</span></div>
+      <div class="comp-item"><div><div class="comp-role">Member</div><div class="comp-dept">Nagar Nigam / Local Body Representative</div></div><span class="filled-badge">Filled</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── OVERVIEW DATA ──
+const schools = [
+  { name:'Delhi Public School, Lucknow',    udise:'09012345678', district:'Lucknow', members:'10/10', lastMeeting:'2026-01-18', nextDue:{label:'Due in 25 days',cls:'due-ok'},   pending:0, status:'compliant' },
+  { name:'City Montessori School, Kanpur',  udise:'09023456789', district:'Kanpur',  members:'8/10',  lastMeeting:'2025-10-20', nextDue:{label:'Overdue by 60 days',cls:'due-over'}, pending:1, status:'warning'   },
+  { name:'St. Francis College, Agra',       udise:'09034567890', district:'Agra',    members:'6/10',  lastMeeting:'2025-04-15', nextDue:{label:'Overdue by 249 days',cls:'due-over'},pending:3, status:'violation' },
+  { name:'Army Public School, Varanasi',    udise:'09045678901', district:'Varanasi',members:'10/10', lastMeeting:'2026-01-22', nextDue:{label:'Due on 2026-04-22',cls:'due-good'}, pending:0, status:'compliant' },
+];
+
+const statusMap = {
+  compliant:{ chip:'schip s-compliant', label:'Compliant' },
+  warning:  { chip:'schip s-warning',   label:'Warning'   },
+  violation:{ chip:'schip s-violation', label:'Violation' },
+};
+
+// ── MEMBERS DATA ──
+const memberData = {
+  'Delhi Public School, Lucknow': {
+    meta:'UDISE: 09012345678 · Lucknow · Sadar',
+    filled:10, total:10,
+    members:[
+      {n:1,role:'Chairperson',rb:'rb-chair',name:'Dr. Rajesh Sharma',   desig:'Principal, DPS Lucknow',        phone:'9876500001',email:'principal@dpslko.edu.in',     status:'filled'},
+      {n:2,role:'Member',     rb:'rb-member',name:'Shri A.K. Tiwari',   desig:'Nayab Tehsildar, Sadar',        phone:'9876500002',email:'nt.sadar@gov.in',             status:'filled'},
+      {n:3,role:'Member',     rb:'rb-member',name:'Smt. Neha Gupta',    desig:'Guardian Representative',       phone:'9876500003',email:'neha.gupta@email.com',        status:'filled'},
+      {n:4,role:'Member',     rb:'rb-member',name:'Shri Vinod Kumar',   desig:'Guardian Representative',       phone:'9876500004',email:'vinod.k@email.com',           status:'filled'},
+      {n:5,role:'Member',     rb:'rb-member',name:'Insp. R.P. Singh',   desig:'SHO, Hazratganj PS',            phone:'9876500005',email:'sho.hazratganj@uppolice.gov.in',status:'filled'},
+      {n:6,role:'Member',     rb:'rb-member',name:'Shri D.K. Pal',      desig:'Asst. Basic Siksha Adhikari',   phone:'9876500006',email:'absa.lucknow@gov.in',         status:'filled'},
+      {n:7,role:'Member',     rb:'rb-member',name:'Smt. M. Verma',      desig:'Sub Divisional Inspector',      phone:'9876500007',email:'sdi.lucknow@gov.in',          status:'filled'},
+      {n:8,role:'Member',     rb:'rb-member',name:'Shri P. Saxena',     desig:'Vehicle Operator Rep.',         phone:'9876500008',email:'psaxena@transport.com',       status:'filled'},
+      {n:9,role:'Member',     rb:'rb-member',name:'Shri H. Mishra',     desig:'Vehicle Operator Rep.',         phone:'9876500009',email:'hmishra@transport.com',       status:'filled'},
+      {n:10,role:'Member',    rb:'rb-member',name:'Shri J. Agarwal',    desig:'Nagar Nigam Rep.',              phone:'9876500010',email:'localbody@lucknow.gov.in',    status:'filled'},
+    ],
+    meetings:[
+      {date:'2025-07-18',desc:'Annual safety committee meeting 2025',        status:'done'},
+      {date:'2026-01-18',desc:'Mid-year compliance review — all members present', status:'done'},
+      {date:'2026-04-12',desc:'Next scheduled quarterly meeting',             status:'upcoming'},
+    ]
+  },
+  'City Montessori School, Kanpur': {
+    meta:'UDISE: 09023456789 · Kanpur · Sadar',
+    filled:8, total:10,
+    members:[
+      {n:1,role:'Chairperson',rb:'rb-chair', name:'Dr. Sunita Mehta',   desig:'Principal, CMS Kanpur',         phone:'9876500021',email:'principal@cms.edu.in',        status:'filled'},
+      {n:2,role:'Member',     rb:'rb-member',name:'Shri R. Srivastava', desig:'Nayab Tehsildar, Sadar',        phone:'9876500022',email:'nt.kanpur@gov.in',            status:'filled'},
+      {n:3,role:'Member',     rb:'rb-member',name:'Smt. P. Gupta',      desig:'Guardian Representative',       phone:'9876500023',email:'pgupta@email.com',            status:'filled'},
+      {n:4,role:'Member',     rb:'rb-member',name:'Vacant',             desig:'Guardian Representative',       phone:'—',         email:'—',                           status:'vacant'},
+      {n:5,role:'Member',     rb:'rb-member',name:'Insp. K. Yadav',     desig:'SHO, Kidwai Nagar PS',          phone:'9876500025',email:'sho.kidwai@uppolice.gov.in',  status:'filled'},
+      {n:6,role:'Member',     rb:'rb-member',name:'Shri M. Singh',      desig:'Asst. Basic Siksha Adhikari',   phone:'9876500026',email:'absa.kanpur@gov.in',          status:'filled'},
+      {n:7,role:'Member',     rb:'rb-member',name:'Vacant',             desig:'Sub Divisional Inspector',      phone:'—',         email:'—',                           status:'vacant'},
+      {n:8,role:'Member',     rb:'rb-member',name:'Shri V. Verma',      desig:'Vehicle Operator Rep.',         phone:'9876500028',email:'vverma@transport.com',        status:'filled'},
+      {n:9,role:'Member',     rb:'rb-member',name:'Shri C. Jain',       desig:'Vehicle Operator Rep.',         phone:'9876500029',email:'cjain@transport.com',         status:'filled'},
+      {n:10,role:'Member',    rb:'rb-member',name:'Shri D. Sharma',     desig:'Nagar Nigam Rep.',              phone:'9876500030',email:'localbody@kanpur.gov.in',     status:'filled'},
+    ],
+    meetings:[
+      {date:'2025-04-20',desc:'Annual safety committee meeting 2025',         status:'done'},
+      {date:'2025-10-20',desc:'Mid-year compliance review',                   status:'done'},
+      {date:'2026-01-20',desc:'Quarterly meeting — OVERDUE',                  status:'overdue'},
+      {date:'2026-04-20',desc:'Next scheduled quarterly meeting',             status:'upcoming'},
+    ]
+  },
+  'St. Francis College, Agra': {
+    meta:'UDISE: 09034567890 · Agra · Sadar',
+    filled:6, total:10,
+    members:[
+      {n:1,role:'Chairperson',rb:'rb-chair', name:'Fr. Thomas D\'Souza', desig:'Principal, St. Francis',       phone:'9876500041',email:'principal@stfrancis.edu.in',  status:'filled'},
+      {n:2,role:'Member',     rb:'rb-member',name:'Vacant',              desig:'Nayab Tehsildar',              phone:'—',         email:'—',                           status:'vacant'},
+      {n:3,role:'Member',     rb:'rb-member',name:'Smt. R. Agarwal',     desig:'Guardian Representative',      phone:'9876500043',email:'ragarwal@email.com',          status:'filled'},
+      {n:4,role:'Member',     rb:'rb-member',name:'Vacant',              desig:'Guardian Representative',      phone:'—',         email:'—',                           status:'vacant'},
+      {n:5,role:'Member',     rb:'rb-member',name:'Insp. S. Yadav',      desig:'SHO, Civil Lines PS',          phone:'9876500045',email:'sho.civillines@uppolice.gov.in',status:'filled'},
+      {n:6,role:'Member',     rb:'rb-member',name:'Vacant',              desig:'Asst. Basic Siksha Adhikari',  phone:'—',         email:'—',                           status:'vacant'},
+      {n:7,role:'Member',     rb:'rb-member',name:'Shri A. Saxena',      desig:'Sub Divisional Inspector',     phone:'9876500047',email:'sdi.agra@gov.in',             status:'filled'},
+      {n:8,role:'Member',     rb:'rb-member',name:'Vacant',              desig:'Vehicle Operator Rep.',        phone:'—',         email:'—',                           status:'vacant'},
+      {n:9,role:'Member',     rb:'rb-member',name:'Shri B. Tiwari',      desig:'Vehicle Operator Rep.',        phone:'9876500049',email:'btiwari@transport.com',       status:'filled'},
+      {n:10,role:'Member',    rb:'rb-member',name:'Shri N. Mishra',      desig:'Nagar Nigam Rep.',             phone:'9876500050',email:'localbody@agra.gov.in',       status:'filled'},
+    ],
+    meetings:[
+      {date:'2025-04-15',desc:'Annual safety committee meeting 2025',         status:'done'},
+      {date:'2025-07-15',desc:'Quarterly meeting — OVERDUE',                  status:'overdue'},
+      {date:'2025-10-15',desc:'Quarterly meeting — OVERDUE',                  status:'overdue'},
+      {date:'2026-01-15',desc:'Quarterly meeting — OVERDUE',                  status:'overdue'},
+      {date:'2026-04-15',desc:'Next scheduled quarterly meeting',             status:'upcoming'},
+    ]
+  },
+  'Army Public School, Varanasi': {
+    meta:'UDISE: 09045678901 · Varanasi · Cantonment',
+    filled:10, total:10,
+    members:[
+      {n:1,role:'Chairperson',rb:'rb-chair', name:'Col. V.K. Mishra',   desig:'Principal, APS Varanasi',       phone:'9876500061',email:'principal@apsvar.edu.in',     status:'filled'},
+      {n:2,role:'Member',     rb:'rb-member',name:'Shri A. Rai',        desig:'Nayab Tehsildar, Cant.',        phone:'9876500062',email:'nt.cant@gov.in',              status:'filled'},
+      {n:3,role:'Member',     rb:'rb-member',name:'Smt. P. Pandey',     desig:'Guardian Representative',       phone:'9876500063',email:'ppandey@email.com',           status:'filled'},
+      {n:4,role:'Member',     rb:'rb-member',name:'Shri R. Chaudhary',  desig:'Guardian Representative',       phone:'9876500064',email:'rchaudhary@email.com',        status:'filled'},
+      {n:5,role:'Member',     rb:'rb-member',name:'Insp. B. Singh',     desig:'SHO, Cant. Police Station',     phone:'9876500065',email:'sho.cant@uppolice.gov.in',    status:'filled'},
+      {n:6,role:'Member',     rb:'rb-member',name:'Shri M. Srivastava', desig:'Asst. Basic Siksha Adhikari',   phone:'9876500066',email:'absa.varanasi@gov.in',        status:'filled'},
+      {n:7,role:'Member',     rb:'rb-member',name:'Smt. K. Yadav',      desig:'Sub Divisional Inspector',      phone:'9876500067',email:'sdi.varanasi@gov.in',         status:'filled'},
+      {n:8,role:'Member',     rb:'rb-member',name:'Shri D. Dubey',      desig:'Vehicle Operator Rep.',         phone:'9876500068',email:'ddubey@transport.com',        status:'filled'},
+      {n:9,role:'Member',     rb:'rb-member',name:'Shri S. Tiwari',     desig:'Vehicle Operator Rep.',         phone:'9876500069',email:'stiwari@transport.com',       status:'filled'},
+      {n:10,role:'Member',    rb:'rb-member',name:'Shri G. Verma',      desig:'Nagar Nigam Rep.',              phone:'9876500070',email:'localbody@varanasi.gov.in',   status:'filled'},
+    ],
+    meetings:[
+      {date:'2025-07-22',desc:'Annual safety committee meeting 2025',         status:'done'},
+      {date:'2026-01-22',desc:'Mid-year compliance review — all members present', status:'done'},
+      {date:'2026-04-22',desc:'Next scheduled quarterly meeting',             status:'upcoming'},
+    ]
+  }
+};
+
+// ── RENDER OVERVIEW ──
+let searchQ='', distF='all';
+function renderOverview() {
+  const tb = document.getElementById('overviewBody');
+  const filtered = schools.filter(s=>{
+    const sq = s.name.toLowerCase().includes(searchQ) || s.udise.includes(searchQ);
+    const df = distF==='all' || s.district===distF;
+    return sq && df;
+  });
+  tb.innerHTML = filtered.map(s=>{
+    const sm = statusMap[s.status];
+    const mCol = s.members.startsWith('10')? 'mem-green' : s.members.split('/')[0]>=8? 'mem-orange':'mem-red';
+    const first = parseInt(s.members);
+    const second = parseInt(s.members.split('/')[1]);
+    const cls = first===second?'mem-green': first/second>=0.8?'mem-orange':'mem-red';
+    return `
+    <tr onclick="selectSchool('${s.name}')">
+      <td class="td-school">${s.name}</td>
+      <td class="td-udise">${s.udise}</td>
+      <td>${s.district}</td>
+      <td><span class="${cls}">${s.members}</span></td>
+      <td style="color:var(--text-secondary);font-size:12px">${s.lastMeeting}</td>
+      <td><span class="due-chip ${s.nextDue.cls}">${s.nextDue.label}</span></td>
+      <td class="${s.pending>0?'pend-red':'pend-zero'}">${s.pending}</td>
+      <td><span class="${sm.chip}">${sm.label}</span></td>
+      <td><button class="arrow-btn"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button></td>
+    </tr>`;
+  }).join('');
+}
+function filterTable(q){ searchQ=q.toLowerCase(); renderOverview(); }
+function filterDistrict(v){ distF=v; renderOverview(); }
+renderOverview();
+
+// ── SELECT SCHOOL ──
+function selectSchool(name) {
+  const d = memberData[name];
+  if (!d) return;
+  document.getElementById('detailTitle').textContent = name;
+  document.getElementById('detailMeta').textContent  = d.meta;
+  document.getElementById('membersTitle').textContent= `Committee Members — ${name}`;
+  document.getElementById('membersTabLabel').textContent = `Members (${d.filled}/${d.total})`;
+  document.getElementById('schoolSelect').value = name;
+
+  // Render members
+  document.getElementById('membersBody').innerHTML = d.members.map(m=>`
+    <tr>
+      <td class="td-num">${m.n}</td>
+      <td><span class="role-badge ${m.rb}">${m.role}</span></td>
+      <td class="td-name">${m.name}</td>
+      <td style="color:var(--text-secondary);font-size:12px">${m.desig}</td>
+      <td><span class="contact-cell"><svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.82 19.79 19.79 0 01.1 1.18 2 2 0 012.11 0h3a2 2 0 012 1.72"/></svg>${m.phone}</span></td>
+      <td><span class="contact-cell"><svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>${m.email}</span></td>
+      <td><span class="${m.status==='filled'?'filled-badge':'vacant-badge'}">${m.status==='filled'?'Filled':'Vacant'}</span></td>
+    </tr>`).join('');
+
+  // Render meetings
+  const sMap = {done:{cls:'ms-done',label:'✓ Completed'},upcoming:{cls:'ms-upcoming',label:'→ Scheduled'},overdue:{cls:'ms-overdue',label:'⚠ Overdue'}};
+  document.getElementById('meetingList').innerHTML = d.meetings.map(m=>`
+    <div class="meeting-item">
+      <div class="m-date">${m.date}</div>
+      <div class="m-desc">${m.desc}</div>
+      <div class="${sMap[m.status].cls}">${sMap[m.status].label}</div>
+    </div>`).join('');
+}
+
+// Init with first school
+selectSchool('Delhi Public School, Lucknow');
+
+function switchDTab(el, id){
+  document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.dpanel').forEach(p=>p.classList.remove('show'));
+  document.getElementById('dpanel-'+id).classList.add('show');
+}
+</script>
+</body>
+</html>

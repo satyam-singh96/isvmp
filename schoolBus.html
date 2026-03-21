@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Know Your School Bus — ISVMP</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1e3a5f;--navy-dark:#152f58;--navy-light:#25487a;
+  --accent:#2563eb;--body-bg:#f4f6fb;--card-bg:#fff;
+  --border:#e2e8f0;--text-primary:#0f172a;--text-secondary:#64748b;--text-muted:#94a3b8;
+  --radius:14px;--radius-sm:8px;
+  --green:#15803d;--red:#dc2626;--orange:#d97706;
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif}
+body{background:var(--body-bg);color:var(--text-primary);display:flex;flex-direction:column;min-height:100vh}
+
+/* ── TOP HEADER ── */
+.top-header{
+  background:var(--navy);
+  padding:28px 20px 30px;
+  text-align:center;
+  flex-shrink:0;
+}
+.header-icon{
+  width:52px;height:52px;background:rgba(255,255,255,.15);
+  border-radius:14px;display:inline-flex;align-items:center;justify-content:center;
+  margin-bottom:14px;
+}
+.header-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:26px;font-weight:800;color:#fff;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  margin-bottom:10px;flex-wrap:wrap;
+}
+.header-desc{font-size:15px;color:rgba(255,255,255,.75);margin-bottom:6px;font-weight:500}
+.header-sub {font-size:13px;color:rgba(255,255,255,.5)}
+
+/* ── MAIN CONTENT ── */
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 20px 40px}
+
+/* SEARCH BOX */
+.search-card{
+  background:var(--card-bg);border-radius:var(--radius);
+  border:1px solid var(--border);
+  padding:28px 28px 22px;
+  width:100%;max-width:700px;
+  box-shadow:0 4px 20px rgba(0,0,0,.07);
+  margin-bottom:32px;
+}
+.search-row{display:flex;gap:10px;margin-bottom:10px}
+.search-input-wrap{
+  flex:1;display:flex;align-items:center;gap:10px;
+  border:2px solid var(--border);border-radius:var(--radius-sm);
+  padding:0 16px;background:#fff;
+  transition:border-color .15s,box-shadow .15s;
+}
+.search-input-wrap:focus-within{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(37,99,235,.1);
+}
+.search-input-wrap svg{color:var(--text-muted);flex-shrink:0}
+.search-input{
+  border:none;outline:none;font-family:'Space Grotesk',sans-serif;
+  font-size:15px;font-weight:600;color:var(--text-primary);
+  width:100%;padding:14px 0;letter-spacing:.5px;
+  text-transform:uppercase;background:transparent;
+}
+.search-input::placeholder{text-transform:none;font-weight:400;font-family:'DM Sans',sans-serif;letter-spacing:0;color:var(--text-muted)}
+.btn-search{
+  background:var(--navy);color:#fff;border:none;
+  border-radius:var(--radius-sm);padding:0 24px;
+  font-size:15px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;gap:8px;white-space:nowrap;
+  font-family:'DM Sans',sans-serif;transition:background .15s;
+  min-height:52px;
+}
+.btn-search:hover{background:var(--navy-dark)}
+.search-hints{font-size:12px;color:var(--text-muted)}
+.search-hints span{cursor:pointer;color:var(--accent);font-weight:500}
+.search-hints span:hover{text-decoration:underline}
+
+/* LOADING */
+.loading{display:none;flex-direction:column;align-items:center;gap:12px;padding:40px;color:var(--text-secondary)}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ERROR */
+.error-card{display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius);padding:24px;text-align:center;max-width:500px;margin:0 auto}
+.error-card svg{margin-bottom:10px;color:#dc2626}
+.error-title{font-size:15px;font-weight:700;color:#b91c1c;margin-bottom:4px}
+.error-desc {font-size:13px;color:#dc2626}
+
+/* RESULT CARD */
+.result-wrap{width:100%;max-width:780px;display:none}
+.result-card{background:var(--card-bg);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.07);margin-bottom:16px}
+
+/* Status banner */
+.status-banner{padding:20px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.sb-fit      {background:#dcfce7;border-bottom:1px solid #bbf7d0}
+.sb-unfit    {background:#fee2e2;border-bottom:1px solid #fecaca}
+.sb-pending  {background:#fef3c7;border-bottom:1px solid #fde68a}
+.status-left{display:flex;align-items:center;gap:12px}
+.status-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.si-fit  {background:#15803d}
+.si-unfit{background:#b91c1c}
+.si-pend {background:#d97706}
+.status-label{font-size:22px;font-weight:800;font-family:'Space Grotesk',sans-serif}
+.sl-fit  {color:#15803d}
+.sl-unfit{color:#b91c1c}
+.sl-pend {color:#d97706}
+.status-sub{font-size:12px;font-weight:500;margin-top:2px}
+.status-sub.green{color:#15803d}
+.status-sub.red  {color:#b91c1c}
+.status-sub.orange{color:#d97706}
+.last-insp{font-size:12px;color:var(--text-secondary);text-align:right}
+.last-insp strong{display:block;font-size:13px;font-weight:700;color:var(--text-primary)}
+
+/* Vehicle info */
+.vehicle-info{padding:20px 24px;border-bottom:1px solid var(--border)}
+.vi-title{font-size:14px;font-weight:700;margin-bottom:14px}
+.vi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.vi-item{display:flex;flex-direction:column;gap:3px}
+.vi-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)}
+.vi-val  {font-size:14px;font-weight:700;color:var(--text-primary)}
+.vi-val.mono{font-family:'Space Grotesk',monospace}
+
+/* Compliance grid */
+.compliance-section{padding:20px 24px}
+.cs-title{font-size:14px;font-weight:700;margin-bottom:14px}
+.comp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.comp-item{border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px}
+.comp-item.ok   {border-color:#bbf7d0;background:#f0fdf4}
+.comp-item.fail {border-color:#fecaca;background:#fef2f2}
+.comp-item.warn {border-color:#fde68a;background:#fffbeb}
+.ci-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.ci-name{font-size:12px;font-weight:600;color:var(--text-primary)}
+.ci-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ci-ok  {background:#16a34a}
+.ci-fail{background:#dc2626}
+.ci-warn{background:#d97706}
+.ci-val {font-size:11px;font-weight:500}
+.ci-val.green {color:#15803d}
+.ci-val.red   {color:#dc2626}
+.ci-val.orange{color:#d97706}
+
+/* Documents */
+.doc-list{display:flex;flex-direction:column;gap:8px}
+.doc-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff}
+.doc-item.ok  {border-color:#bbf7d0;background:#f0fdf4}
+.doc-item.exp {border-color:#fecaca;background:#fef2f2}
+.doc-item.near{border-color:#fde68a;background:#fffbeb}
+.doc-name{font-size:13px;font-weight:600}
+.doc-date{font-size:12px;color:var(--text-secondary)}
+.doc-status{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.ds-valid  {background:#dcfce7;color:#15803d}
+.ds-expired{background:#fee2e2;color:#b91c1c}
+.ds-expiring{background:#fef3c7;color:#92400e}
+
+/* Report concern */
+.concern-bar{padding:14px 24px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:#f8fafc}
+.concern-text{font-size:13px;color:var(--text-secondary)}
+.btn-report{display:flex;align-items:center;gap:6px;background:var(--navy);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* FOOTER */
+.footer{text-align:center;padding:20px;font-size:12px;color:var(--text-muted);line-height:1.8;flex-shrink:0}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  .header-title{font-size:20px}
+  .header-desc{font-size:13px}
+  .search-card{padding:20px 16px 16px}
+  .search-row{flex-direction:column}
+  .btn-search{width:100%;justify-content:center}
+  .vi-grid{grid-template-columns:1fr 1fr}
+  .comp-grid{grid-template-columns:1fr 1fr}
+  .main{padding:24px 14px 32px}
+}
+@media(max-width:400px){
+  .vi-grid{grid-template-columns:1fr 1fr}
+  .comp-grid{grid-template-columns:1fr 1fr}
+  .status-banner{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP HEADER -->
+<div class="top-header">
+  <div class="header-title">
+    <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    Know Your School Bus
+  </div>
+  <div class="header-desc">Enter a school bus registration number to check its compliance and safety status</div>
+  <div class="header-sub">Integrated School Vehicle Monitoring Portal — Uttar Pradesh</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SEARCH -->
+  <div class="search-card">
+    <div class="search-row">
+      <div class="search-input-wrap">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" id="vehicleInput" type="text" placeholder="Enter vehicle number (e.g. UP32 AB 1234)" maxlength="20"
+          oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')doSearch()"/>
+      </div>
+      <button class="btn-search" onclick="doSearch()">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search
+      </button>
+    </div>
+    <div class="search-hints">Try: <span onclick="quickSearch('UP32AB1234')">UP32AB1234</span>, <span onclick="quickSearch('UP32CD5678')">UP32CD5678</span>, <span onclick="quickSearch('UP65EF9012')">UP65EF9012</span></div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <span>Searching vehicle records...</span>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-card" id="errorCard">
+    <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <div class="error-title">Vehicle Not Found</div>
+    <div class="error-desc" id="errorMsg">No records found for this vehicle number. Please check and try again.</div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-wrap" id="resultWrap">
+    <div class="result-card">
+
+      <!-- STATUS BANNER -->
+      <div class="status-banner" id="statusBanner">
+        <div class="status-left">
+          <div class="status-icon" id="statusIcon"></div>
+          <div>
+            <div class="status-label" id="statusLabel"></div>
+            <div class="status-sub" id="statusSub"></div>
+          </div>
+        </div>
+        <div class="last-insp" id="lastInsp"></div>
+      </div>
+
+      <!-- VEHICLE INFO -->
+      <div class="vehicle-info">
+        <div class="vi-title">Vehicle Information</div>
+        <div class="vi-grid" id="vehicleGrid"></div>
+      </div>
+
+      <!-- COMPLIANCE -->
+      <div class="compliance-section">
+        <div class="cs-title">Safety Equipment Status</div>
+        <div class="comp-grid" id="compGrid"></div>
+
+        <div class="cs-title" style="margin-top:16px">Document Status</div>
+        <div class="doc-list" id="docList"></div>
+      </div>
+
+      <!-- REPORT CONCERN -->
+      <div class="concern-bar">
+        <div class="concern-text">🚨 Spotted a safety issue with this vehicle? Report it to the authorities.</div>
+        <button class="btn-report">Report a Concern</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  Integrated School Vehicle Monitoring Portal (ISVMP) — Transport Department, Uttar Pradesh<br/>
+  For any concerns regarding school bus safety, contact: 1800-XXX-XXXX
+</div>
+
+<script>
+// ── MOCK DATABASE ──
+const vehicles = {
+  'UP32AB1234': {
+    status:'fit', school:'Delhi Public School, Lucknow', type:'School Bus',
+    operator:'DPS Transport Pvt. Ltd.', district:'Lucknow', capacity:42,
+    make:'Tata LP 713', color:'Yellow', lastInspection:'2026-03-14', inspector:'R.K. Sharma',
+    equipment:[
+      {name:'Speed Governor', ok:true,  val:'Functional'},
+      {name:'GPS Device',     ok:true,  val:'Active'},
+      {name:'CCTV Camera',    ok:true,  val:'Functional'},
+      {name:'Fire Extinguisher',ok:true,val:'Valid (2027-01)'},
+      {name:'First Aid Kit',  ok:true,  val:'Available'},
+      {name:'Emergency Exit', ok:true,  val:'Clear'},
+    ],
+    docs:[
+      {name:'Registration Certificate', expiry:'2028-03-31', status:'valid'},
+      {name:'Fitness Certificate',       expiry:'2026-09-14', status:'valid'},
+      {name:'Insurance',                 expiry:'2026-12-31', status:'valid'},
+      {name:'Route Permit',              expiry:'2026-11-30', status:'valid'},
+      {name:'Pollution Certificate (PUC)',expiry:'2026-06-14',status:'valid'},
+      {name:'Speed Governor Certificate',expiry:'2027-03-14',status:'valid'},
+    ]
+  },
+  'UP32CD5678': {
+    status:'unfit', school:'City Montessori School, Kanpur', type:'Contract Carriage',
+    operator:'Shri V. Saxena', district:'Kanpur', capacity:30,
+    make:'Ashok Leyland Lynx', color:'Yellow', lastInspection:'2026-03-14', inspector:'A. Verma',
+    equipment:[
+      {name:'Speed Governor', ok:true,  val:'Functional'},
+      {name:'GPS Device',     ok:false, val:'Offline'},
+      {name:'CCTV Camera',    ok:true,  val:'Functional'},
+      {name:'Fire Extinguisher',ok:false,val:'Expired'},
+      {name:'First Aid Kit',  ok:true,  val:'Available'},
+      {name:'Emergency Exit', ok:false, val:'Blocked'},
+    ],
+    docs:[
+      {name:'Registration Certificate', expiry:'2027-07-31', status:'valid'},
+      {name:'Fitness Certificate',       expiry:'2026-02-10', status:'expired'},
+      {name:'Insurance',                 expiry:'2026-04-05', status:'expiring'},
+      {name:'Route Permit',              expiry:'2025-12-31', status:'expired'},
+      {name:'Pollution Certificate (PUC)',expiry:'2026-05-14',status:'expiring'},
+      {name:'Speed Governor Certificate',expiry:'2027-01-20',status:'valid'},
+    ]
+  },
+  'UP65EF9012': {
+    status:'pending', school:"St. Xavier's School, Agra", type:'School Van',
+    operator:'S. Kumar', district:'Agra', capacity:12,
+    make:'Force Traveller', color:'Yellow', lastInspection:'2026-03-13', inspector:'S. Kumar',
+    equipment:[
+      {name:'Speed Governor', ok:true,  val:'Functional'},
+      {name:'GPS Device',     ok:true,  val:'Active'},
+      {name:'CCTV Camera',    ok:false, val:'Not Installed'},
+      {name:'Fire Extinguisher',ok:true,val:'Valid'},
+      {name:'First Aid Kit',  ok:false, val:'Missing'},
+      {name:'Emergency Exit', ok:true,  val:'Clear'},
+    ],
+    docs:[
+      {name:'Registration Certificate', expiry:'2029-01-15', status:'valid'},
+      {name:'Fitness Certificate',       expiry:'2026-07-13', status:'valid'},
+      {name:'Insurance',                 expiry:'2026-08-31', status:'valid'},
+      {name:'Route Permit',              expiry:'2026-09-30', status:'valid'},
+      {name:'Pollution Certificate (PUC)',expiry:'2026-04-01',status:'expiring'},
+      {name:'Speed Governor Certificate',expiry:'2027-03-13',status:'valid'},
+    ]
+  },
+  'UP54GH3456': {
+    status:'fit', school:'Army Public School, Varanasi', type:'School Bus',
+    operator:'Army Welfare Education Society', district:'Varanasi', capacity:48,
+    make:'Tata Starbus', color:'Yellow', lastInspection:'2026-03-13', inspector:'P. Singh',
+    equipment:[
+      {name:'Speed Governor', ok:true,  val:'Functional'},
+      {name:'GPS Device',     ok:true,  val:'Active'},
+      {name:'CCTV Camera',    ok:true,  val:'Functional'},
+      {name:'Fire Extinguisher',ok:true,val:'Valid (2027-06)'},
+      {name:'First Aid Kit',  ok:true,  val:'Available'},
+      {name:'Emergency Exit', ok:true,  val:'Clear'},
+    ],
+    docs:[
+      {name:'Registration Certificate', expiry:'2030-03-01', status:'valid'},
+      {name:'Fitness Certificate',       expiry:'2026-09-13', status:'valid'},
+      {name:'Insurance',                 expiry:'2026-11-30', status:'valid'},
+      {name:'Route Permit',              expiry:'2026-10-31', status:'valid'},
+      {name:'Pollution Certificate (PUC)',expiry:'2026-07-13',status:'valid'},
+      {name:'Speed Governor Certificate',expiry:'2027-03-13',status:'valid'},
+    ]
+  }
+};
+
+function normalise(v){ return v.replace(/\s+/g,'').toUpperCase(); }
+
+function quickSearch(v){
+  document.getElementById('vehicleInput').value = v.replace(/([A-Z]{2})(\d{2})([A-Z]{2})(\d+)/,'$1 $2 $3 $4');
+  doSearch();
+}
+
+function doSearch(){
+  const raw = document.getElementById('vehicleInput').value;
+  const key = normalise(raw);
+
+  // Hide all
+  document.getElementById('loading').style.display='none';
+  document.getElementById('errorCard').style.display='none';
+  document.getElementById('resultWrap').style.display='none';
+
+  if(!key){ return; }
+
+  // Show loading
+  document.getElementById('loading').style.display='flex';
+
+  setTimeout(()=>{
+    document.getElementById('loading').style.display='none';
+    const v = vehicles[key];
+    if(!v){
+      const ec = document.getElementById('errorCard');
+      ec.style.display='block';
+      document.getElementById('errorMsg').textContent=`No records found for vehicle "${raw.toUpperCase()}". Please verify the registration number and try again.`;
+      return;
+    }
+    showResult(v, raw.toUpperCase());
+  }, 800);
+}
+
+function showResult(v, regNo){
+  const rw = document.getElementById('resultWrap');
+  rw.style.display='block';
+
+  // STATUS BANNER
+  const configs = {
+    fit:    {bannerCls:'sb-fit',   iconCls:'si-fit',   labelCls:'sl-fit',   subCls:'green',  label:'✓ FIT',   sub:'This vehicle is SAFE & compliant to carry school children'},
+    unfit:  {bannerCls:'sb-unfit', iconCls:'si-unfit', labelCls:'sl-unfit', subCls:'red',    label:'✗ UNFIT', sub:'This vehicle has safety violations — should NOT operate'},
+    pending:{bannerCls:'sb-pending',iconCls:'si-pend', labelCls:'sl-pend',  subCls:'orange', label:'⏳ PENDING',sub:'Inspection result pending — awaiting review'},
+  };
+  const cfg = configs[v.status];
+
+  const banner = document.getElementById('statusBanner');
+  banner.className = `status-banner ${cfg.bannerCls}`;
+
+  const icon = document.getElementById('statusIcon');
+  icon.className = `status-icon ${cfg.iconCls}`;
+  icon.innerHTML = v.status==='fit'
+    ? `<svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`
+    : v.status==='unfit'
+    ? `<svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+    : `<svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+
+  document.getElementById('statusLabel').textContent = cfg.label;
+  document.getElementById('statusLabel').className = `status-label ${cfg.labelCls}`;
+  document.getElementById('statusSub').textContent = cfg.sub;
+  document.getElementById('statusSub').className = `status-sub ${cfg.subCls}`;
+  document.getElementById('lastInsp').innerHTML = `Last Inspection<strong>${v.lastInspection}</strong>Inspector: ${v.inspector}`;
+
+  // VEHICLE INFO
+  document.getElementById('vehicleGrid').innerHTML = [
+    {label:'Registration No.', val:regNo, cls:'mono'},
+    {label:'Vehicle Type',     val:v.type, cls:''},
+    {label:'School',           val:v.school, cls:''},
+    {label:'Operator',         val:v.operator, cls:''},
+    {label:'District',         val:v.district, cls:''},
+    {label:'Seating Capacity', val:v.capacity+' seats', cls:''},
+    {label:'Make / Model',     val:v.make, cls:''},
+    {label:'Color',            val:v.color, cls:''},
+  ].map(i=>`<div class="vi-item"><div class="vi-label">${i.label}</div><div class="vi-val ${i.cls}">${i.val}</div></div>`).join('');
+
+  // EQUIPMENT
+  document.getElementById('compGrid').innerHTML = v.equipment.map(e=>{
+    const cls = e.ok ? 'comp-item ok' : 'comp-item fail';
+    const iCls = e.ok ? 'ci-icon ci-ok' : 'ci-icon ci-fail';
+    const vCls = e.ok ? 'ci-val green' : 'ci-val red';
+    const ico = e.ok
+      ? `<svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`
+      : `<svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+    return `<div class="${cls}"><div class="ci-top"><span class="ci-name">${e.name}</span><div class="${iCls}">${ico}</div></div><div class="${vCls}">${e.val}</div></div>`;
+  }).join('');
+
+  // DOCUMENTS
+  const dsCfg = {
+    valid:   {itemCls:'doc-item ok',   badgeCls:'doc-status ds-valid',   badgeLabel:'Valid'},
+    expired: {itemCls:'doc-item exp',  badgeCls:'doc-status ds-expired',  badgeLabel:'Expired'},
+    expiring:{itemCls:'doc-item near', badgeCls:'doc-status ds-expiring', badgeLabel:'Expiring Soon'},
+  };
+  document.getElementById('docList').innerHTML = v.docs.map(d=>{
+    const dc = dsCfg[d.status];
+    return `<div class="${dc.itemCls}"><div><div class="doc-name">${d.name}</div><div class="doc-date">Expiry: ${d.expiry}</div></div><span class="${dc.badgeCls}">${dc.badgeLabel}</span></div>`;
+  }).join('');
+
+  rw.scrollIntoView({behavior:'smooth', block:'start'});
+}
+</script>
+</body>
+</html>
