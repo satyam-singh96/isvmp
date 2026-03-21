@@ -1,0 +1,528 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Map-Based Monitoring</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --accent: #2563eb;
+    --body-bg: #f8fafc;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --green: #16a34a;
+    --orange: #d97706;
+    --red: #dc2626;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--body-bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 28px 28px 48px;
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    flex-wrap: wrap; gap: 14px; margin-bottom: 20px;
+  }
+  .page-title { font-size: 22px; font-weight: 800; margin-bottom: 3px; }
+  .page-sub   { font-size: 13px; color: var(--text-secondary); }
+
+  .district-btn {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 14px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    color: var(--text-primary); font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s; white-space: nowrap;
+  }
+  .district-btn:hover { background: var(--body-bg); }
+
+  /* MAIN LAYOUT */
+  .map-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 16px;
+    align-items: start;
+  }
+
+  /* MAP CONTAINER */
+  .map-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    position: relative;
+    min-height: 500px;
+  }
+
+  .map-controls {
+    position: absolute; top: 14px; right: 14px;
+    display: flex; flex-direction: column; gap: 4px; z-index: 10;
+  }
+  .map-btn {
+    width: 32px; height: 32px; background: white;
+    border: 1px solid var(--border); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; color: var(--text-secondary);
+    transition: background 0.12s; font-weight: 700;
+  }
+  .map-btn:hover { background: var(--body-bg); }
+
+  .map-svg-wrap {
+    width: 100%; padding: 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .map-svg-wrap svg { width: 100%; max-width: 780px; height: auto; }
+
+  /* District path styles */
+  .district-path {
+    fill: #e8edf5; stroke: #b8c4d8; stroke-width: 1.2;
+    cursor: pointer; transition: fill 0.2s;
+  }
+  .district-path:hover { fill: #d0daf0; }
+  .district-path.selected { fill: #dbeafe; stroke: #2563eb; stroke-width: 2; }
+
+  /* Map dots */
+  .dot { cursor: pointer; transition: r 0.15s; }
+  .dot:hover { r: 10; }
+  .dot-compliant { fill: #16a34a; }
+  .dot-warning   { fill: #d97706; }
+  .dot-violation { fill: #dc2626; }
+  .dot-pulse {
+    animation: pulse 2s infinite;
+    transform-origin: center;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* LEGEND */
+  .legend {
+    position: absolute; bottom: 16px; left: 16px;
+    background: white; border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px;
+    font-size: 12px;
+  }
+  .legend-title { font-weight: 700; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 12px; font-weight: 500; }
+  .legend-item:last-child { margin-bottom: 0; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* TOOLTIP */
+  .map-tooltip {
+    position: absolute; background: #1e293b; color: white;
+    border-radius: 8px; padding: 10px 13px; font-size: 12px;
+    pointer-events: none; z-index: 20; display: none;
+    min-width: 140px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+  .tooltip-name { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .tooltip-row  { display: flex; justify-content: space-between; gap: 14px; opacity: 0.85; margin-top: 2px; }
+
+  /* RIGHT PANEL */
+  .right-panel { display: flex; flex-direction: column; gap: 14px; }
+
+  .panel-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+  }
+
+  /* Select district card */
+  .select-card {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center; gap: 10px;
+    padding: 28px 20px; min-height: 120px;
+  }
+  .select-icon { color: var(--text-muted); }
+  .select-title { font-size: 15px; font-weight: 700; }
+  .select-sub   { font-size: 12px; color: var(--text-secondary); }
+
+  /* District detail card (hidden by default) */
+  .district-detail { display: none; }
+  .district-detail.show { display: block; }
+  .select-card.hide { display: none; }
+
+  .detail-header { margin-bottom: 14px; }
+  .detail-name  { font-size: 16px; font-weight: 800; margin-bottom: 2px; }
+  .detail-sub   { font-size: 12px; color: var(--text-secondary); }
+  .detail-rows  { display: flex; flex-direction: column; gap: 10px; }
+  .detail-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px;
+  }
+  .detail-label { color: var(--text-secondary); }
+  .detail-val   { font-weight: 700; }
+  .detail-val.red { color: var(--red); }
+  .detail-val.green { color: var(--green); }
+  .detail-val.orange { color: var(--orange); }
+  .compliance-bar {
+    width: 100%; height: 6px; background: #e2e8f0;
+    border-radius: 3px; margin-top: 4px; overflow: hidden;
+  }
+  .compliance-fill {
+    height: 100%; border-radius: 3px; background: var(--green);
+    transition: width 0.5s ease;
+  }
+  .back-btn {
+    margin-top: 14px; font-size: 12px; color: var(--accent);
+    cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; font-family: 'DM Sans', sans-serif;
+  }
+  .back-btn:hover { text-decoration: underline; }
+
+  /* State Summary */
+  .panel-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; }
+  .summary-rows { display: flex; flex-direction: column; gap: 10px; }
+  .summary-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  }
+  .summary-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .summary-label { color: var(--text-secondary); }
+  .summary-val   { font-weight: 700; }
+  .summary-val.red { color: var(--red); }
+
+  /* Hotspots */
+  .hotspot-list { display: flex; flex-direction: column; gap: 8px; }
+  .hotspot-item {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #fef2f2; border: 1px solid #fecaca;
+    border-radius: 8px; padding: 10px 14px; font-size: 13px;
+    cursor: pointer; transition: background 0.12s;
+  }
+  .hotspot-item:hover { background: #fee2e2; }
+  .hotspot-name { font-weight: 600; }
+  .hotspot-count { font-weight: 700; color: var(--red); font-size: 12px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .map-layout { grid-template-columns: 1fr; }
+    .right-panel { display: grid; grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 580px) {
+    body { padding: 16px 16px 40px; }
+    .page-title { font-size: 18px; }
+    .page-header { flex-direction: column; }
+    .right-panel { grid-template-columns: 1fr; }
+    .map-container { min-height: 360px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Map-Based Monitoring</div>
+      <div class="page-sub">GIS Monitoring — Uttar Pradesh</div>
+    </div>
+    <button class="district-btn">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      District View
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="map-layout">
+
+    <!-- MAP -->
+    <div class="map-container">
+      <div class="map-controls">
+        <div class="map-btn" onclick="zoomIn()">+</div>
+        <div class="map-btn" onclick="zoomOut()">−</div>
+        <div class="map-btn" onclick="resetZoom()" title="Reset">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><path d="M21 3l-7 7M3 21l7-7"/></svg>
+        </div>
+      </div>
+
+      <div class="map-svg-wrap" id="mapWrap">
+        <svg id="mapSvg" viewBox="0 0 800 560" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+              <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#00000015"/>
+            </filter>
+          </defs>
+
+          <!-- UP state outline approximation with district polygons -->
+          <g id="districts">
+            <!-- Saharanpur -->
+            <polygon class="district-path" data-name="Saharanpur" data-buses="312" data-compliance="71" data-violations="48" data-status="warning"
+              points="170,50 240,38 275,65 260,100 220,115 175,95"/>
+            <!-- Muzaffarnagar -->
+            <polygon class="district-path" data-name="Muzaffarnagar" data-buses="278" data-compliance="78" data-violations="31" data-status="compliant"
+              points="240,38 310,30 340,60 310,90 275,65"/>
+            <!-- Meerut -->
+            <polygon class="district-path" data-name="Meerut" data-buses="445" data-compliance="68" data-violations="67" data-status="violation"
+              points="310,30 380,25 405,55 375,85 340,60"/>
+            <!-- Ghaziabad -->
+            <polygon class="district-path" data-name="Ghaziabad" data-buses="398" data-compliance="82" data-violations="29" data-status="compliant"
+              points="380,25 440,30 460,65 430,88 405,55"/>
+            <!-- Bulandshahr -->
+            <polygon class="district-path" data-name="Bulandshahr" data-buses="256" data-compliance="75" data-violations="33" data-status="warning"
+              points="430,88 460,65 490,80 480,120 445,125"/>
+            <!-- Aligarh -->
+            <polygon class="district-path" data-name="Aligarh" data-buses="310" data-compliance="73" data-violations="40" data-status="warning"
+              points="445,125 480,120 510,140 500,175 465,180 440,160"/>
+            <!-- Agra -->
+            <polygon class="district-path" data-name="Agra" data-buses="388" data-compliance="70" data-violations="55" data-status="warning"
+              points="440,160 500,175 510,210 480,230 445,220 425,195"/>
+            <!-- Mathura -->
+            <polygon class="district-path" data-name="Mathura" data-buses="230" data-compliance="80" data-violations="22" data-status="compliant"
+              points="375,145 440,160 425,195 385,200 360,175"/>
+            <!-- Lucknow -->
+            <polygon class="district-path" data-name="Lucknow" data-buses="620" data-compliance="85" data-violations="38" data-status="compliant"
+              points="470,280 530,265 555,295 540,330 495,340 465,315"/>
+            <!-- Kanpur -->
+            <polygon class="district-path" data-name="Kanpur" data-buses="510" data-compliance="76" data-violations="44" data-status="warning"
+              points="400,290 465,275 470,280 465,315 430,325 395,310"/>
+            <!-- Unnao -->
+            <polygon class="district-path" data-name="Unnao" data-buses="198" data-compliance="79" data-violations="19" data-status="compliant"
+              points="430,250 480,240 490,265 465,280 430,270"/>
+            <!-- Allahabad/Prayagraj -->
+            <polygon class="district-path" data-name="Prayagraj" data-buses="420" data-compliance="74" data-violations="50" data-status="warning"
+              points="510,350 560,335 590,360 575,400 535,410 505,385"/>
+            <!-- Varanasi -->
+            <polygon class="district-path" data-name="Varanasi" data-buses="360" data-compliance="77" data-violations="36" data-status="compliant"
+              points="610,370 660,355 680,385 665,415 625,420 605,400"/>
+            <!-- Gorakhpur -->
+            <polygon class="district-path" data-name="Gorakhpur" data-buses="380" data-compliance="72" data-violations="52" data-status="warning"
+              points="590,240 645,225 675,255 660,290 620,300 585,275"/>
+            <!-- Bareilly -->
+            <polygon class="district-path" data-name="Bareilly" data-buses="340" data-compliance="80" data-violations="28" data-status="compliant"
+              points="340,120 400,110 420,145 395,170 360,165 330,150"/>
+            <!-- Moradabad -->
+            <polygon class="district-path" data-name="Moradabad" data-buses="285" data-compliance="76" data-violations="35" data-status="warning"
+              points="375,85 430,88 445,125 400,135 360,120 350,95"/>
+            <!-- Jhansi -->
+            <polygon class="district-path" data-name="Jhansi" data-buses="220" data-compliance="65" data-violations="55" data-status="violation"
+              points="330,280 390,270 400,305 370,330 330,325 310,300"/>
+            <!-- Mirzapur -->
+            <polygon class="district-path" data-name="Mirzapur" data-buses="195" data-compliance="67" data-violations="42" data-status="violation"
+              points="565,390 610,375 625,405 610,440 570,445 550,420"/>
+
+            <!-- State outer glow border (subtle) -->
+            <path fill="none" stroke="#8899bb" stroke-width="2" stroke-dasharray="6,3" opacity="0.4"
+              d="M170,50 L440,30 L460,65 L510,140 L510,210 L480,230 L555,295 L675,255 L680,385 L665,415 L625,420 L570,445 L535,410 L505,385 L310,300 L310,30 Z"/>
+          </g>
+
+          <!-- DOTS: Compliant (green) -->
+          <g id="dots">
+            <circle class="dot dot-compliant" cx="215" cy="75" r="8" data-type="compliant" data-label="Saharanpur North" onclick="showDotInfo(event,'Saharanpur North','Compliant',12,0)"/>
+            <circle class="dot dot-compliant" cx="325" cy="55" r="8" data-type="compliant" data-label="Muzaffarnagar" onclick="showDotInfo(event,'Muzaffarnagar','Compliant',18,2)"/>
+            <circle class="dot dot-compliant" cx="455" cy="48" r="8" data-type="compliant" data-label="Ghaziabad" onclick="showDotInfo(event,'Ghaziabad','Compliant',22,3)"/>
+            <circle class="dot dot-compliant" cx="365" cy="155" r="8" data-type="compliant" data-label="Bareilly" onclick="showDotInfo(event,'Bareilly','Compliant',15,1)"/>
+            <circle class="dot dot-compliant" cx="390" cy="295" r="8" data-type="compliant" data-label="Kanpur" onclick="showDotInfo(event,'Kanpur','Compliant',28,4)"/>
+            <circle class="dot dot-compliant" cx="505" cy="305" r="8" data-type="compliant" data-label="Lucknow" onclick="showDotInfo(event,'Lucknow','Compliant',35,2)"/>
+            <circle class="dot dot-compliant" cx="636" cy="390" r="8" data-type="compliant" data-label="Varanasi" onclick="showDotInfo(event,'Varanasi','Compliant',20,3)"/>
+
+            <!-- Warning (orange) -->
+            <circle class="dot dot-warning" cx="385" cy="55" r="8" data-type="warning" data-label="Meerut West" onclick="showDotInfo(event,'Meerut West','Warning',10,8)"/>
+            <circle class="dot dot-warning" cx="462" cy="110" r="8" data-type="warning" data-label="Bulandshahr" onclick="showDotInfo(event,'Bulandshahr','Warning',14,6)"/>
+            <circle class="dot dot-warning" cx="480" cy="255" r="8" data-type="warning" data-label="Unnao" onclick="showDotInfo(event,'Unnao','Warning',11,5)"/>
+            <circle class="dot dot-warning" cx="660" cy="265" r="8" data-type="warning" data-label="Gorakhpur" onclick="showDotInfo(event,'Gorakhpur','Warning',19,9)"/>
+            <circle class="dot dot-warning" cx="540" cy="370" r="8" data-type="warning" data-label="Prayagraj" onclick="showDotInfo(event,'Prayagraj','Warning',23,7)"/>
+            <circle class="dot dot-warning" cx="472" cy="168" r="8" data-type="warning" data-label="Aligarh" onclick="showDotInfo(event,'Aligarh','Warning',17,6)"/>
+            <circle class="dot dot-warning" cx="410" cy="182" r="8" data-type="warning" data-label="Agra" onclick="showDotInfo(event,'Agra','Warning',21,8)"/>
+
+            <!-- Violation (red) - pulsing -->
+            <circle class="dot dot-violation dot-pulse" cx="392" cy="38" r="8" data-type="violation" data-label="Meerut" onclick="showDotInfo(event,'Meerut','Violation',8,14)"/>
+            <circle class="dot dot-violation dot-pulse" cx="352" cy="305" r="8" data-type="violation" data-label="Jhansi" onclick="showDotInfo(event,'Jhansi','Violation',6,18)"/>
+            <circle class="dot dot-violation dot-pulse" cx="585" cy="415" r="8" data-type="violation" data-label="Mirzapur" onclick="showDotInfo(event,'Mirzapur','Violation',5,15)"/>
+            <circle class="dot dot-violation dot-pulse" cx="228" cy="62" r="8" data-type="violation" data-label="Saharanpur" onclick="showDotInfo(event,'Saharanpur','Violation',4,12)"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- LEGEND -->
+      <div class="legend">
+        <div class="legend-title">Legend</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div> Compliant (7)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div> Warning (7)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div> Violation (4)</div>
+      </div>
+
+      <!-- TOOLTIP -->
+      <div class="map-tooltip" id="tooltip">
+        <div class="tooltip-name" id="tt-name">–</div>
+        <div class="tooltip-row"><span>Status</span><span id="tt-status">–</span></div>
+        <div class="tooltip-row"><span>Buses</span><span id="tt-buses">–</span></div>
+        <div class="tooltip-row"><span>Violations</span><span id="tt-vio">–</span></div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+
+      <!-- Select a district -->
+      <div class="panel-card select-card" id="selectCard">
+        <svg class="select-icon" width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <div class="select-title">Select a district</div>
+        <div class="select-sub">Click on any marker to view details</div>
+      </div>
+
+      <!-- District Detail (shown on click) -->
+      <div class="panel-card district-detail" id="districtDetail">
+        <div class="detail-header">
+          <div class="detail-name" id="d-name">–</div>
+          <div class="detail-sub" id="d-status-text">–</div>
+        </div>
+        <div class="detail-rows">
+          <div class="detail-row">
+            <span class="detail-label">Total Buses</span>
+            <span class="detail-val" id="d-buses">–</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Compliance</span>
+            <span class="detail-val green" id="d-compliance">–</span>
+          </div>
+          <div class="compliance-bar">
+            <div class="compliance-fill" id="d-bar" style="width:0%"></div>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Violations</span>
+            <span class="detail-val red" id="d-violations">–</span>
+          </div>
+        </div>
+        <button class="back-btn" onclick="clearSelection()">← Back</button>
+      </div>
+
+      <!-- State Summary -->
+      <div class="panel-card">
+        <div class="panel-title">State Summary</div>
+        <div class="summary-rows">
+          <div class="summary-row">
+            <span class="summary-label">Total Districts</span>
+            <span class="summary-val">18</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Total Buses</span>
+            <span class="summary-val">9,290</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Avg Compliance</span>
+            <span class="summary-val">77%</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Total Violations</span>
+            <span class="summary-val red">591</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hotspots -->
+      <div class="panel-card">
+        <div class="panel-title">Hotspots</div>
+        <div class="hotspot-list">
+          <div class="hotspot-item" onclick="selectDistrict('Meerut',445,68,67,'violation')">
+            <span class="hotspot-name">Meerut</span>
+            <span class="hotspot-count">67 violations</span>
+          </div>
+          <div class="hotspot-item" onclick="selectDistrict('Jhansi',220,65,55,'violation')">
+            <span class="hotspot-name">Jhansi</span>
+            <span class="hotspot-count">55 violations</span>
+          </div>
+          <div class="hotspot-item" onclick="selectDistrict('Saharanpur',312,71,48,'warning')">
+            <span class="hotspot-name">Saharanpur</span>
+            <span class="hotspot-count">48 violations</span>
+          </div>
+          <div class="hotspot-item" onclick="selectDistrict('Mirzapur',195,67,42,'violation')">
+            <span class="hotspot-name">Mirzapur</span>
+            <span class="hotspot-count">42 violations</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  // ── ZOOM ──
+  let scale = 1, tx = 0, ty = 0;
+  const svg = document.getElementById('mapSvg');
+
+  function applyTransform() {
+    svg.style.transform = `scale(${scale}) translate(${tx}px,${ty}px)`;
+    svg.style.transformOrigin = 'center center';
+  }
+  function zoomIn()  { scale = Math.min(scale + 0.25, 3); applyTransform(); }
+  function zoomOut() { scale = Math.max(scale - 0.25, 0.6); applyTransform(); }
+  function resetZoom(){ scale = 1; tx = 0; ty = 0; applyTransform(); }
+
+  // ── TOOLTIP ──
+  const tooltip = document.getElementById('tooltip');
+  function showDotInfo(e, name, status, buses, violations) {
+    const wrap = document.getElementById('mapWrap');
+    const rect = wrap.getBoundingClientRect();
+    const x = e.clientX - rect.left + 12;
+    const y = e.clientY - rect.top - 20;
+    document.getElementById('tt-name').textContent = name;
+    document.getElementById('tt-status').textContent = status;
+    document.getElementById('tt-buses').textContent = buses;
+    document.getElementById('tt-vio').textContent = violations;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+    tooltip.style.display = 'block';
+
+    // Also update detail panel
+    selectDistrict(name, buses, 100 - Math.round(violations/buses*100), violations, status.toLowerCase());
+    e.stopPropagation();
+  }
+  document.addEventListener('click', () => { tooltip.style.display = 'none'; });
+
+  // ── DISTRICT SELECTION ──
+  function selectDistrict(name, buses, compliance, violations, status) {
+    document.getElementById('selectCard').classList.add('hide');
+    document.getElementById('districtDetail').classList.add('show');
+    document.getElementById('d-name').textContent = name;
+    document.getElementById('d-buses').textContent = buses.toLocaleString();
+    document.getElementById('d-compliance').textContent = compliance + '%';
+    document.getElementById('d-violations').textContent = violations;
+    document.getElementById('d-bar').style.width = compliance + '%';
+    const fill = compliance >= 80 ? '#16a34a' : compliance >= 70 ? '#d97706' : '#dc2626';
+    document.getElementById('d-bar').style.background = fill;
+    const statusMap = { compliant: '✓ Compliant', warning: '⚠ Warning', violation: '✗ Violation Active' };
+    document.getElementById('d-status-text').textContent = statusMap[status] || status;
+  }
+
+  function clearSelection() {
+    document.getElementById('selectCard').classList.remove('hide');
+    document.getElementById('districtDetail').classList.remove('show');
+    document.querySelectorAll('.district-path').forEach(p => p.classList.remove('selected'));
+  }
+
+  // Click on district polygon
+  document.querySelectorAll('.district-path').forEach(path => {
+    path.addEventListener('click', function(e) {
+      document.querySelectorAll('.district-path').forEach(p => p.classList.remove('selected'));
+      this.classList.add('selected');
+      const name = this.dataset.name;
+      const buses = parseInt(this.dataset.buses);
+      const compliance = parseInt(this.dataset.compliance);
+      const violations = parseInt(this.dataset.violations);
+      const status = this.dataset.status;
+      selectDistrict(name, buses, compliance, violations, status);
+      e.stopPropagation();
+    });
+  });
+
+  // Scroll wheel zoom
+  document.getElementById('mapWrap').addEventListener('wheel', (e) => {
+    e.preventDefault();
+    if (e.deltaY < 0) zoomIn(); else zoomOut();
+  }, { passive: false });
+</script>
+</body>
+</html>

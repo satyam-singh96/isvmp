@@ -1,0 +1,1182 @@
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>state Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+     
+    --main-bg: #f1f5f9;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --blue: #2563eb;
+    --green: #16a34a;
+    --red: #dc2626;
+    --orange: #d97706;
+    --teal: #0891b2;
+    --indigo: #4f46e5;
+    --card-blue: #1e40af;
+    --card-green: #15803d;
+    --card-red: #b91c1c;
+    --card-orange: #b45309;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
+  }
+
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--main-bg);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+
+  /* ── SIDEBAR ── */
+   
+  /* ── MAIN ── */
+  .main-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+   
+  /* ── CONTENT ── */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 22px;
+  }
+
+  .content::-webkit-scrollbar { width: 6px; }
+  .content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+
+  /* ── PAGE HEADER ── */
+  .page-header { margin-bottom: 16px; }
+  .page-header h1 { font-size: 21px; font-weight: 700; color: var(--text-primary); }
+  .page-header p { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+  .connection-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 18px;
+    font-size: 12px;
+  }
+
+  .badge {
+    display: flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 20px;
+    font-size: 11.5px; font-weight: 500;
+  }
+
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-teal { background: #ccfbf1; color: #0f766e; }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* ── STAT CARDS ROW ── */
+  .cards-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .stat-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card.colored { border: none; }
+  .stat-card.blue-card { background: #1e40af; }
+  .stat-card.green-card { background: #15803d; }
+  .stat-card.red-card { background: #b91c1c; }
+  .stat-card.orange-card { background: #b45309; }
+
+  .stat-card .card-label {
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--text-secondary); margin-bottom: 6px;
+  }
+
+  .stat-card.colored .card-label { color: rgba(255,255,255,0.75); }
+
+  .stat-card .card-value {
+    font-size: 24px; font-weight: 700;
+    color: var(--text-primary); line-height: 1.1;
+  }
+
+  .stat-card.colored .card-value { color: white; }
+
+  .stat-card .card-sub {
+    font-size: 10.5px; color: var(--text-secondary); margin-top: 3px;
+  }
+
+  .stat-card.colored .card-sub { color: rgba(255,255,255,0.65); }
+
+  .card-icon {
+    position: absolute; right: 12px; top: 12px;
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.06);
+  }
+
+  .stat-card.colored .card-icon { background: rgba(255,255,255,0.15); }
+
+  .cards-row2 {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  /* ── SAFETY COMPLIANCE ── */
+  .section-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: 13.5px; font-weight: 600;
+    color: var(--text-primary); margin-bottom: 14px;
+  }
+
+  .safety-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+
+  .safety-item {}
+  .safety-item .s-label {
+    font-size: 11.5px; color: var(--text-secondary);
+    display: flex; align-items: center; gap: 5px; margin-bottom: 4px;
+  }
+
+  .safety-item .s-pct {
+    font-size: 18px; font-weight: 700;
+    color: var(--text-primary); margin-bottom: 5px;
+  }
+
+  .progress-bar {
+    height: 5px; border-radius: 3px;
+    background: #e2e8f0; overflow: hidden; margin-bottom: 4px;
+  }
+
+  .progress-fill {
+    height: 100%; border-radius: 3px;
+    transition: width 0.8s ease;
+  }
+
+  .fill-green { background: #22c55e; }
+  .fill-orange { background: #f59e0b; }
+  .fill-red { background: #ef4444; }
+  .fill-blue { background: #3b82f6; }
+
+  .s-non { font-size: 10.5px; color: var(--text-secondary); }
+
+  /* ── TWO COLUMN ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+
+  thead th {
+    padding: 9px 10px;
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  tbody tr:hover td { background: #f8fafc; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .num-green { color: #16a34a; font-weight: 500; }
+  .num-red { color: #dc2626; font-weight: 500; }
+  .num-orange { color: #d97706; font-weight: 500; }
+
+  /* ── COMMITTEE CARD ── */
+  .committee-block {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+
+  .committee-block .cb-title {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px;
+  }
+
+  .committee-block .cb-row {
+    display: flex; align-items: baseline; gap: 16px;
+  }
+
+  .committee-block .cb-big {
+    font-size: 20px; font-weight: 700;
+  }
+
+  .committee-block .cb-red {
+    color: var(--red); font-size: 17px; font-weight: 700;
+  }
+
+  .committee-block .cb-sub {
+    font-size: 10.5px; color: var(--text-secondary); margin-top: 2px;
+  }
+
+  .view-link {
+    display: flex; align-items: center; gap: 4px;
+    color: var(--blue); font-size: 12px; font-weight: 500;
+    cursor: pointer; margin-top: 10px;
+    text-decoration: none;
+  }
+
+  /* ── CHARTS ROW ── */
+  .chart-wrap { position: relative; height: 220px; }
+
+  /* ── STATUS BADGES ── */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 12px;
+    font-size: 10.5px; font-weight: 600;
+  }
+
+  .pill-red { background: #fee2e2; color: #b91c1c; }
+  .pill-orange { background: #fef3c7; color: #92400e; }
+  .pill-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  /* ── DISTRICT RANKING TABLE ── */
+  .rank-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  /* ── EXPIRING DOCS ── */
+  .expiring-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .exp-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+
+  .exp-card.urgent { border-color: #fca5a5; background: #fff5f5; }
+
+  .exp-icon {
+    width: 30px; height: 30px;
+    border-radius: 7px; background: #fef3c7;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .exp-icon.red-icon { background: #fee2e2; }
+
+  .exp-veh { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .exp-type { font-size: 11.5px; color: var(--text-secondary); margin-top: 1px; }
+  .exp-date { font-size: 11px; font-weight: 500; margin-top: 3px; color: #d97706; }
+  .exp-date.exp-red { color: var(--red); }
+
+  /* ── SECTION HEADER with action ── */
+  .sec-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .view-all {
+    font-size: 11.5px; color: var(--blue); font-weight: 500; cursor: pointer;
+    display: flex; align-items: center; gap: 3px;
+  }
+
+  /* ── SCROLLBAR ── */
+  .content::-webkit-scrollbar { width: 5px; }
+
+  /* ── RECENT VIOLATIONS TABLE ── */
+  .mono { font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  /* compact chart labels */
+  canvas { display: block; }
+
+  /* ══════════════════════════════════════════════════════════════════
+     RESPONSIVE DESIGN
+  ══════════════════════════════════════════════════════════════════ */
+  
+  /* ── TABLET (768px – 1024px) ── */
+  @media (max-width: 1024px) {
+    .content { padding: 16px 18px; }
+    
+    .page-header h1 { font-size: 18px; }
+    .page-header p { font-size: 11px; }
+    
+    .cards-row, .cards-row2 {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    
+    .stat-card { padding: 12px; border-radius: 8px; }
+    .stat-card .card-label { font-size: 10px; margin-bottom: 5px; }
+    .stat-card .card-value { font-size: 20px; }
+    .stat-card .card-icon { width: 26px; height: 26px; right: 10px; top: 10px; }
+    
+    .safety-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .safety-item .s-label { font-size: 11px; }
+    .safety-item .s-pct { font-size: 16px; }
+    
+    .two-col { 
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    
+    .expiring-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  }
+  
+  /* ── MOBILE (max-width: 767px) ── */
+  @media (max-width: 767px) {
+    .content { padding: 12px 10px; }
+    
+    .page-header { margin-bottom: 12px; }
+    .page-header h1 { font-size: 16px; }
+    .page-header p { font-size: 10px; }
+    
+    .connection-bar {
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      font-size: 11px;
+    }
+    
+    .badge { font-size: 10px; padding: 2px 7px; }
+    
+    /* Stat cards - 2 columns */
+    .cards-row, .cards-row2 {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    
+    .stat-card {
+      padding: 10px;
+      border-radius: 7px;
+    }
+    
+    .stat-card .card-label { font-size: 9px; margin-bottom: 4px; }
+    .stat-card .card-value { font-size: 18px; }
+    .stat-card .card-sub { font-size: 9px; }
+    .stat-card .card-icon { width: 22px; height: 22px; right: 8px; top: 8px; }
+    .stat-card .card-icon svg { width: 12px; height: 12px; }
+    
+    /* Section cards */
+    .section-card {
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .section-title { font-size: 11px; margin-bottom: 10px; }
+    
+    /* Safety grid - 2 columns */
+    .safety-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    
+    .safety-item .s-label { font-size: 10px; }
+    .safety-item .s-pct { font-size: 16px; margin-bottom: 4px; }
+    .progress-bar { height: 4px; margin-bottom: 3px; }
+    .s-non { font-size: 9px; }
+    
+    /* Table scrollable */
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: -12px -12px;
+      padding: 0 12px;
+    }
+    
+    table { font-size: 11px; }
+    thead th { 
+      font-size: 9px;
+      padding: 6px 8px;
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 6px 8px;
+      font-size: 11px;
+    }
+    
+    /* Hide columns on mobile */
+    thead th:nth-child(n+4),
+    tbody td:nth-child(n+4) {
+      display: none;
+    }
+    
+    /* Two column layout */
+    .two-col { 
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    
+    /* Committee block */
+    .committee-block {
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+    
+    .committee-block .cb-title { font-size: 9px; margin-bottom: 6px; }
+    .committee-block .cb-row { gap: 12px; }
+    .committee-block .cb-big { font-size: 18px; }
+    .committee-block .cb-red { font-size: 15px; }
+    .committee-block .cb-sub { font-size: 10px; }
+    
+    /* Expiring docs grid - single column */
+    .expiring-grid {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    
+    .exp-card {
+      padding: 10px;
+      border-radius: 6px;
+    }
+    
+    .exp-icon { width: 26px; height: 26px; }
+    .exp-veh { font-size: 12px; }
+    .exp-type { font-size: 10px; }
+    .exp-date { font-size: 10px; }
+    
+    /* Status pills */
+    .status-pill { font-size: 9px; padding: 2px 6px; }
+    
+    .view-all { font-size: 10px; }
+    
+    .mono { font-size: 11px; }
+  }
+  
+  /* ── EXTRA SMALL (max-width: 480px) ── */
+  @media (max-width: 480px) {
+    .content { padding: 10px 8px; }
+    
+    .page-header h1 { font-size: 14px; }
+    .page-header p { font-size: 9px; }
+    
+    .connection-bar {
+      padding: 6px 10px;
+      margin-bottom: 10px;
+      font-size: 10px;
+      gap: 4px;
+    }
+    
+    .badge { font-size: 9px; padding: 2px 6px; }
+    .badge-dot { width: 4px; height: 4px; }
+    
+    /* Single column stat cards */
+    .cards-row, .cards-row2 {
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    
+    .stat-card {
+      padding: 10px;
+      border-radius: 6px;
+    }
+    
+    .stat-card .card-label { font-size: 8px; }
+    .stat-card .card-value { font-size: 16px; }
+    .stat-card .card-icon { width: 20px; height: 20px; }
+    
+    .section-card {
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .section-title { font-size: 10px; margin-bottom: 8px; }
+    
+    .safety-grid {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    
+    .safety-item .s-label { font-size: 9px; }
+    .safety-item .s-pct { font-size: 14px; }
+    .progress-bar { height: 4px; }
+    .s-non { font-size: 8px; }
+    
+    table { font-size: 10px; }
+    thead th {
+      font-size: 8px;
+      padding: 4px 6px;
+    }
+    tbody td {
+      padding: 4px 6px;
+      font-size: 10px;
+    }
+    
+    .committee-block {
+      padding: 8px 10px;
+      margin-bottom: 6px;
+    }
+    
+    .committee-block .cb-title { font-size: 8px; }
+    .committee-block .cb-big { font-size: 16px; }
+    .committee-block .cb-red { font-size: 14px; }
+    
+    .exp-card { padding: 8px; gap: 8px; }
+    .exp-icon { width: 22px; height: 22px; }
+    .exp-veh { font-size: 11px; }
+    .exp-type { font-size: 9px; }
+    .exp-date { font-size: 9px; }
+    
+    .view-all { font-size: 9px; }
+    .mono { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+ 
+<!-- ═══════════ MAIN ═══════════ -->
+<div class="main-wrap">
+
+  <!-- HEADER -->
+   
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- PAGE TITLE -->
+    <div class="page-header">
+      <h1>State Level Monitoring Dashboard</h1>
+      <p>Transport Commissioner Office, Uttar Pradesh — Integrated School Vehicle Monitoring Portal</p>
+    </div>
+
+    <!-- CONNECTION BAR -->
+    <div class="connection-bar">
+      <span class="badge badge-green">
+        <span class="badge-dot"></span> VAHAN Connected
+      </span>
+      <span class="badge badge-teal">
+        <span class="badge-dot"></span> SARATHI Connected
+      </span>
+      <span style="color:var(--text-secondary);font-size:12px;">Vehicle &amp; driver data auto-verified from central databases</span>
+    </div>
+
+    <!-- STAT CARDS ROW 1 -->
+    <div class="cards-row">
+      <div class="stat-card">
+        <div class="card-label">Total Schools</div>
+        <div class="card-value">24,856</div>
+        <div class="card-icon">
+          <svg width="15" height="15" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="card-label">Schools w/ Vehicles</div>
+        <div class="card-value">18,432</div>
+        <div class="card-icon">
+          <svg width="15" height="15" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/></svg>
+        </div>
+      </div>
+      <div class="stat-card colored blue-card">
+        <div class="card-label">Registered Vehicles</div>
+        <div class="card-value">42,891</div>
+        <div class="card-icon">
+          <svg width="15" height="15" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        </div>
+      </div>
+      <div class="stat-card colored green-card">
+        <div class="card-label">Compliant</div>
+        <div class="card-value">34,712</div>
+        <div class="card-icon">
+          <svg width="15" height="15" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+      </div>
+      <div class="stat-card colored red-card">
+        <div class="card-label">Non-Compliant</div>
+        <div class="card-value">8,179</div>
+        <div class="card-icon">
+          <svg width="15" height="15" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+        </div>
+      </div>
+      <div class="stat-card colored orange-card">
+        <div class="card-label">Pending Inspections</div>
+        <div class="card-value">3,241</div>
+        <div class="card-icon">
+          <svg width="15" height="15" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAT CARDS ROW 2 -->
+    <div class="cards-row2">
+      <div class="stat-card">
+        <div class="card-label">Total Drivers</div>
+        <div class="card-value">40,250</div>
+        <div class="card-icon">
+          <svg width="15" height="15" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+      </div>
+      <div class="stat-card colored green-card">
+        <div class="card-label">Drivers Verified</div>
+        <div class="card-value">32,628</div>
+        <div class="card-sub">81% police verified</div>
+        <div class="card-icon">
+          <svg width="15" height="15" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+        </div>
+      </div>
+      <div class="stat-card colored orange-card">
+        <div class="card-label">DL Expiring (30D)</div>
+        <div class="card-value">845</div>
+        <div class="card-icon">
+          <svg width="15" height="15" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="card-label">Registered Vendors</div>
+        <div class="card-value">3,450</div>
+        <div class="card-icon">
+          <svg width="15" height="15" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="card-label">Form Submissions</div>
+        <div class="card-value">1,230</div>
+        <div class="card-icon">
+          <svg width="15" height="15" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+        </div>
+      </div>
+      <div class="stat-card colored orange-card">
+        <div class="card-label">Permits Pending</div>
+        <div class="card-value">478</div>
+        <div class="card-icon">
+          <svg width="15" height="15" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAFETY COMPLIANCE -->
+    <div class="section-card">
+      <div class="section-title">Safety Equipment Compliance (All Vehicles)</div>
+      <div class="safety-grid">
+        <div class="safety-item">
+          <div class="s-label">
+            <svg width="12" height="12" fill="none" stroke="#22c55e" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Fire Extinguisher
+          </div>
+          <div class="s-pct">90%</div>
+          <div class="progress-bar"><div class="progress-fill fill-green" style="width:90%"></div></div>
+          <div class="s-non">4,371 non-compliant</div>
+        </div>
+        <div class="safety-item">
+          <div class="s-label">
+            <svg width="12" height="12" fill="none" stroke="#ec4899" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            First Aid Kit
+          </div>
+          <div class="s-pct">94%</div>
+          <div class="progress-bar"><div class="progress-fill fill-green" style="width:94%"></div></div>
+          <div class="s-non">2,741 non-compliant</div>
+        </div>
+        <div class="safety-item">
+          <div class="s-label">
+            <svg width="12" height="12" fill="none" stroke="#f59e0b" stroke-width="2" viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            GPS Tracker
+          </div>
+          <div class="s-pct">73%</div>
+          <div class="progress-bar"><div class="progress-fill fill-orange" style="width:73%"></div></div>
+          <div class="s-non">11,611 non-compliant</div>
+        </div>
+        <div class="safety-item">
+          <div class="s-label">
+            <svg width="12" height="12" fill="none" stroke="#ef4444" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+            CCTV Camera
+          </div>
+          <div class="s-pct">66%</div>
+          <div class="progress-bar"><div class="progress-fill fill-red" style="width:66%"></div></div>
+          <div class="s-non">14,441 non-compliant</div>
+        </div>
+        <div class="safety-item">
+          <div class="s-label">
+            <svg width="12" height="12" fill="none" stroke="#22c55e" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Speed Governor
+          </div>
+          <div class="s-pct">86%</div>
+          <div class="progress-bar"><div class="progress-fill fill-green" style="width:86%"></div></div>
+          <div class="s-non">6,171 non-compliant</div>
+        </div>
+        <div class="safety-item">
+          <div class="s-label">
+            <svg width="12" height="12" fill="none" stroke="#22c55e" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Emergency Exit
+          </div>
+          <div class="s-pct">93%</div>
+          <div class="progress-bar"><div class="progress-fill fill-green" style="width:93%"></div></div>
+          <div class="s-non">3,091 non-compliant</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOCUMENT COMPLIANCE + COMMITTEE -->
+    <div class="two-col">
+      <div class="section-card" style="margin-bottom:0">
+        <div class="section-title">Document Compliance Summary</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Document Type</th>
+                <th>Valid</th>
+                <th>Expired</th>
+                <th>Expiring in 30 Days</th>
+                <th>Compliance %</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Fitness Certificate</td>
+                <td class="num-green">38,950</td>
+                <td class="num-red">2,420</td>
+                <td class="num-orange">1,521</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="progress-bar" style="width:80px;"><div class="progress-fill fill-green" style="width:91%"></div></div>
+                    91%
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>Insurance</td>
+                <td class="num-green">40,200</td>
+                <td class="num-red">1,180</td>
+                <td class="num-orange">1,511</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="progress-bar" style="width:80px;"><div class="progress-fill fill-green" style="width:94%"></div></div>
+                    94%
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>Permit</td>
+                <td class="num-green">36,800</td>
+                <td class="num-red">3,450</td>
+                <td class="num-orange">2,641</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="progress-bar" style="width:80px;"><div class="progress-fill fill-green" style="width:86%"></div></div>
+                    86%
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>PUC Certificate</td>
+                <td class="num-green">37,500</td>
+                <td class="num-red">3,120</td>
+                <td class="num-orange">2,271</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="progress-bar" style="width:80px;"><div class="progress-fill fill-green" style="width:87%"></div></div>
+                    87%
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-card" style="margin-bottom:0">
+        <div class="section-title">Committee Compliance</div>
+        <div class="committee-block">
+          <div class="cb-title">District Committees (222E)</div>
+          <div class="cb-row">
+            <div>
+              <div class="cb-big">68/75</div>
+              <div class="cb-sub">Formed</div>
+            </div>
+            <div>
+              <div class="cb-red">5</div>
+              <div class="cb-sub">Meetings Overdue</div>
+            </div>
+          </div>
+        </div>
+        <div class="committee-block">
+          <div class="cb-title">School Committees (222G)</div>
+          <div class="cb-row">
+            <div>
+              <div class="cb-big">18,200/24,856</div>
+              <div class="cb-sub">Formed</div>
+            </div>
+            <div>
+              <div class="cb-red">2,100</div>
+              <div class="cb-sub">Meetings Overdue</div>
+            </div>
+          </div>
+        </div>
+        <a class="view-link">
+          View Committee Details
+          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- COMPLIANCE TREND + VIOLATION DISTRIBUTION -->
+    <div class="two-col" style="margin-top:16px;">
+      <div class="section-card" style="margin-bottom:0">
+        <div class="section-title">Compliance Trend (State Level)</div>
+        <div class="chart-wrap">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+      <div class="section-card" style="margin-bottom:0">
+        <div class="section-title">Violation Distribution</div>
+        <div style="height:160px;display:flex;align-items:center;justify-content:center;">
+          <canvas id="donutChart" style="max-height:160px;"></canvas>
+        </div>
+        <div style="margin-top:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12px;">
+            <div style="display:flex;align-items:center;gap:7px;"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></span>No Fire Extinguisher</div>
+            <span style="font-weight:600;">245</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12px;">
+            <div style="display:flex;align-items:center;gap:7px;"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></span>GPS Not Working</div>
+            <span style="font-weight:600;">189</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12px;">
+            <div style="display:flex;align-items:center;gap:7px;"><span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;display:inline-block;"></span>Speed Governor Missing</div>
+            <span style="font-weight:600;">156</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12px;">
+            <div style="display:flex;align-items:center;gap:7px;"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block;"></span>Expired Fitness</div>
+            <span style="font-weight:600;">134</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISTRICT RANKING + RECENT VIOLATIONS -->
+    <div class="two-col" style="margin-top:16px;">
+      <div class="section-card" style="margin-bottom:0">
+        <div class="rank-header">
+          <div class="section-title" style="margin-bottom:0;">District Performance Ranking</div>
+          <span class="view-all">View All <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>District</th>
+                <th>Vehicles</th>
+                <th>Fitness</th>
+                <th>Insurance</th>
+                <th>GPS</th>
+                <th>CCTV</th>
+                <th>Compliance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight:500;">Lucknow</td>
+                <td>1,240</td>
+                <td class="num-green">92%</td>
+                <td class="num-green">95%</td>
+                <td class="num-orange">82%</td>
+                <td class="num-orange">76%</td>
+                <td><div style="display:flex;align-items:center;gap:6px;"><div class="progress-bar" style="width:55px;"><div class="progress-fill fill-green" style="width:89%"></div></div><span>89</span></div></td>
+              </tr>
+              <tr>
+                <td style="font-weight:500;">Kanpur</td>
+                <td>980</td>
+                <td class="num-orange">81%</td>
+                <td class="num-green">85%</td>
+                <td class="num-red">68%</td>
+                <td class="num-red">58%</td>
+                <td><div style="display:flex;align-items:center;gap:6px;"><div class="progress-bar" style="width:55px;"><div class="progress-fill fill-orange" style="width:76%"></div></div><span>76</span></div></td>
+              </tr>
+              <tr>
+                <td style="font-weight:500;">Agra</td>
+                <td>860</td>
+                <td class="num-green">86%</td>
+                <td class="num-green">90%</td>
+                <td class="num-orange">75%</td>
+                <td class="num-orange">70%</td>
+                <td><div style="display:flex;align-items:center;gap:6px;"><div class="progress-bar" style="width:55px;"><div class="progress-fill fill-green" style="width:82%"></div></div><span>82</span></div></td>
+              </tr>
+              <tr>
+                <td style="font-weight:500;">Varanasi</td>
+                <td>720</td>
+                <td class="num-orange">74%</td>
+                <td class="num-orange">78%</td>
+                <td class="num-red">60%</td>
+                <td class="num-red">55%</td>
+                <td><div style="display:flex;align-items:center;gap:6px;"><div class="progress-bar" style="width:55px;"><div class="progress-fill fill-orange" style="width:71%"></div></div><span>71</span></div></td>
+              </tr>
+              <tr>
+                <td style="font-weight:500;">Prayagraj</td>
+                <td>650</td>
+                <td class="num-green">89%</td>
+                <td class="num-green">92%</td>
+                <td class="num-orange">80%</td>
+                <td class="num-orange">74%</td>
+                <td><div style="display:flex;align-items:center;gap:6px;"><div class="progress-bar" style="width:55px;"><div class="progress-fill fill-green" style="width:85%"></div></div><span>85</span></div></td>
+              </tr>
+              <tr>
+                <td style="font-weight:500;">Meerut</td>
+                <td>540</td>
+                <td class="num-red">72%</td>
+                <td class="num-orange">75%</td>
+                <td class="num-red">55%</td>
+                <td class="num-red">48%</td>
+                <td><div style="display:flex;align-items:center;gap:6px;"><div class="progress-bar" style="width:55px;"><div class="progress-fill fill-red" style="width:68%"></div></div><span>68</span></div></td>
+              </tr>
+              <tr>
+                <td style="font-weight:500;">Gorakhpur</td>
+                <td>480</td>
+                <td class="num-orange">78%</td>
+                <td class="num-orange">82%</td>
+                <td class="num-orange">62%</td>
+                <td class="num-red">52%</td>
+                <td><div style="display:flex;align-items:center;gap:6px;"><div class="progress-bar" style="width:55px;"><div class="progress-fill fill-orange" style="width:74%"></div></div><span>74</span></div></td>
+              </tr>
+              <tr>
+                <td style="font-weight:500;">Bareilly</td>
+                <td>420</td>
+                <td class="num-green">83%</td>
+                <td class="num-green">87%</td>
+                <td class="num-orange">70%</td>
+                <td class="num-orange">64%</td>
+                <td><div style="display:flex;align-items:center;gap:6px;"><div class="progress-bar" style="width:55px;"><div class="progress-fill fill-orange" style="width:79%"></div></div><span>79</span></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-card" style="margin-bottom:0;">
+        <div class="rank-header">
+          <div class="section-title" style="margin-bottom:0;">Recent Violations</div>
+          <span class="view-all">View All <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Vehicle No.</th>
+              <th>School</th>
+              <th>Violation</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">UP32 AB 1234</td>
+              <td>DPS Lucknow</td>
+              <td style="font-size:11.5px;">Speed Governor Missing</td>
+              <td><span class="status-pill pill-red"><span class="pill-dot"></span>Violation</span></td>
+            </tr>
+            <tr>
+              <td class="mono">UP78 CD 5678</td>
+              <td>City Montessori</td>
+              <td style="font-size:11.5px;">Expired Fitness Cert.</td>
+              <td><span class="status-pill pill-red"><span class="pill-dot"></span>Violation</span></td>
+            </tr>
+            <tr>
+              <td class="mono">UP65 EF 9012</td>
+              <td>St. Xavier's Agra</td>
+              <td style="font-size:11.5px;">No Fire Extinguisher</td>
+              <td><span class="status-pill pill-orange"><span class="pill-dot"></span>Warning</span></td>
+            </tr>
+            <tr>
+              <td class="mono">UP54 GH 3456</td>
+              <td>Army Public School</td>
+              <td style="font-size:11.5px;">GPS Malfunction</td>
+              <td><span class="status-pill pill-orange"><span class="pill-dot"></span>Warning</span></td>
+            </tr>
+            <tr>
+              <td class="mono">UP70 IJ 7890</td>
+              <td>Delhi Public School</td>
+              <td style="font-size:11.5px;">No First Aid Kit</td>
+              <td><span class="status-pill pill-red"><span class="pill-dot"></span>Violation</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- EXPIRING DOCUMENTS -->
+    <div class="section-card" style="margin-top:16px;">
+      <div class="sec-header">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <svg width="14" height="14" fill="none" stroke="#d97706" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span class="section-title" style="margin-bottom:0;">Documents Expiring Within 30 Days</span>
+        </div>
+      </div>
+      <div class="expiring-grid">
+        <div class="exp-card">
+          <div class="exp-icon">
+            <svg width="14" height="14" fill="none" stroke="#d97706" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div>
+            <div class="exp-veh">UP32 KL 2345</div>
+            <div class="exp-type">Fitness Certificate — GD Goenka</div>
+            <div class="exp-date">Expires: 2026-04-05 (20 days)</div>
+          </div>
+        </div>
+        <div class="exp-card">
+          <div class="exp-icon">
+            <svg width="14" height="14" fill="none" stroke="#d97706" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div>
+            <div class="exp-veh">UP78 MN 6789</div>
+            <div class="exp-type">Insurance — Ryan International</div>
+            <div class="exp-date">Expires: 2026-04-10 (25 days)</div>
+          </div>
+        </div>
+        <div class="exp-card urgent">
+          <div class="exp-icon red-icon">
+            <svg width="14" height="14" fill="none" stroke="#dc2626" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div>
+            <div class="exp-veh">UP65 OP 1357</div>
+            <div class="exp-type">Permit — Kendriya Vidyalaya</div>
+            <div class="exp-date exp-red">Expires: 2026-03-25 (9 days)</div>
+          </div>
+        </div>
+        <div class="exp-card urgent">
+          <div class="exp-icon red-icon">
+            <svg width="14" height="14" fill="none" stroke="#dc2626" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div>
+            <div class="exp-veh">UP54 QR 2468</div>
+            <div class="exp-type">PUC Certificate — Army Public</div>
+            <div class="exp-date exp-red">Expires: 2026-03-28 (12 days)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:20px;"></div>
+  </div><!-- /content -->
+</div><!-- /main-wrap -->
+
+<script>
+// ── LINE CHART ──
+const trendCtx = document.getElementById('trendChart').getContext('2d');
+new Chart(trendCtx, {
+  type: 'line',
+  data: {
+    labels: ['Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'],
+    datasets: [{
+      data: [63, 65, 67, 69, 67, 71, 78, 82],
+      borderColor: '#1e40af',
+      backgroundColor: 'rgba(30,64,175,0.06)',
+      borderWidth: 2.5,
+      pointBackgroundColor: '#1e40af',
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      fill: true,
+      tension: 0.35
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        min: 50, max: 100,
+        grid: { color: '#f1f5f9' },
+        ticks: { font: { size: 11 }, color: '#94a3b8', stepSize: 10 }
+      },
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 11 }, color: '#94a3b8' }
+      }
+    }
+  }
+});
+
+// ── DONUT CHART ──
+const donutCtx = document.getElementById('donutChart').getContext('2d');
+new Chart(donutCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['No Fire Extinguisher','GPS Not Working','Speed Governor Missing','Expired Fitness'],
+    datasets: [{
+      data: [245, 189, 156, 134],
+      backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#8b5cf6'],
+      borderWidth: 2,
+      borderColor: '#ffffff',
+      hoverOffset: 6
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.label}: ${ctx.parsed}`
+        }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

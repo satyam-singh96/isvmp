@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ISVMP</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif; }
+    body { display: flex; flex-direction: row; background: #f1f5f9; }
+
+    /* ══════════════════════════════
+       OVERLAY (mobile backdrop)
+    ══════════════════════════════ */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 90;
+      transition: opacity 0.3s ease;
+    }
+    .overlay.visible { display: block; }
+
+    /* ══════════════════════════════
+       SIDEBAR
+    ══════════════════════════════ */
+    .sidebar {
+      width: 240px;
+      min-width: 240px;
+      height: 100vh;
+      background: #111827;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+      transition: width 0.3s cubic-bezier(.4,0,.2,1),
+                  min-width 0.3s cubic-bezier(.4,0,.2,1),
+                  transform 0.3s cubic-bezier(.4,0,.2,1);
+      z-index: 100;
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+    /* Scrollable content area */
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+    .sidebar-content::-webkit-scrollbar { width: 4px; }
+    .sidebar-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+    /* ── Logo ── */
+    .logo-wrap {
+      display: flex; align-items: center; gap: 11px;
+      padding: 18px 16px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0; overflow: hidden;
+    }
+    .logo-badge {
+      width: 38px; height: 38px; min-width: 38px;
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      border-radius: 10px; display: grid; place-items: center;
+      font-family: 'Rajdhani', sans-serif; font-weight: 700;
+      font-size: 15px; color: #fff; letter-spacing: 0.5px;
+    }
+    .logo-text {
+      overflow: hidden; white-space: nowrap;
+      transition: opacity 0.25s ease, max-width 0.3s cubic-bezier(.4,0,.2,1);
+      max-width: 200px; opacity: 1;
+    }
+    .logo-title { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 16px; color: #f0f4ff; letter-spacing: 1px; }
+    .logo-sub   { font-size: 10px; color: #6b7fa3; }
+
+    /* ── Section Label ── */
+    .section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.8px;
+      text-transform: uppercase; color: #64748b;
+      padding: 18px 18px 6px; display: block;
+      overflow: hidden; white-space: nowrap;
+      transition: opacity 0.25s ease, max-width 0.3s cubic-bezier(.4,0,.2,1),
+                  padding 0.3s ease, height 0.3s ease;
+      max-width: 200px; opacity: 1; line-height: 1;
+      pointer-events: none; user-select: none;
+    }
+
+    /* ── Nav Item ── */
+    .nav-item {
+      display: flex; align-items: center; gap: 11px;
+      padding: 9px 14px 9px 16px; margin: 1px 8px;
+      border-radius: 8px; cursor: pointer;
+      text-decoration: none; color: #6b7fa3;
+      font-size: 13.5px; font-weight: 400;
+      transition: color 0.2s ease, background 0.2s ease;
+      position: relative; overflow: hidden;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: #cbd5e1; }
+    .nav-item i { width: 20px; min-width: 20px; font-size: 15px; color: #6b7fa3; display: grid; place-items: center; transition: color 0.2s ease; }
+    .nav-item.active { background: rgba(59,130,246,0.15); color: #93c5fd; }
+    .nav-item.active i { color: #93c5fd; }
+    .nav-item.active .nav-icon svg { stroke: #93c5fd; }
+
+    .nav-icon { width: 20px; height: 20px; min-width: 20px; display: grid; place-items: center; flex-shrink: 0; }
+    .nav-icon svg { width: 17px; height: 17px; stroke: #6b7fa3; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.2s ease; }
+    .nav-item:hover .nav-icon svg { stroke: #cbd5e1; }
+
+    .nav-label {
+      overflow: hidden; white-space: nowrap;
+      transition: opacity 0.25s ease, max-width 0.3s cubic-bezier(.4,0,.2,1);
+      max-width: 200px; opacity: 1;
+    }
+
+    .divider { height: 1px; background: rgba(255,255,255,0.06); margin: 6px 14px; transition: opacity 0.25s ease; opacity: 1; }
+    .spacer  { flex: 1; min-height: 20px; }
+
+    /* ── Profile Card ── */
+    .profile-card {
+      margin: 10px 8px 14px;
+      background: #1e2a3a; border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 11px 13px;
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer; flex-shrink: 0; overflow: hidden;
+    }
+    .profile-avatar {
+      width: 32px; height: 32px; min-width: 32px;
+      background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+      border-radius: 50%; display: grid; place-items: center;
+      font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; color: #fff;
+    }
+    .profile-info {
+      overflow: hidden; white-space: nowrap;
+      transition: opacity 0.25s ease, max-width 0.3s cubic-bezier(.4,0,.2,1);
+      max-width: 200px; opacity: 1;
+    }
+    .profile-name { font-size: 12.5px; font-weight: 600; color: #f0f4ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .profile-role { font-size: 10.5px; color: #6b7fa3; }
+
+    /* ══ COLLAPSED — Desktop ══ */
+    .sidebar.collapsed {
+      width: 64px !important;
+      min-width: 64px !important;
+    }
+    .sidebar.collapsed .nav-label,
+    .sidebar.collapsed .logo-text,
+    .sidebar.collapsed .profile-info,
+    .sidebar.collapsed .section-label { opacity: 0; max-width: 0; pointer-events: none; }
+    .sidebar.collapsed .section-label { padding-top: 0; padding-bottom: 0; height: 0; }
+    .sidebar.collapsed .divider { opacity: 0; }
+    .sidebar.collapsed .logo-wrap { justify-content: center; }
+    .sidebar.collapsed .nav-item  { justify-content: center; padding-left: 0; padding-right: 0; margin: 1px 6px; }
+    .sidebar.collapsed .profile-card { justify-content: center; padding: 11px 6px; }
+
+    /* Tooltip on collapsed */
+    .sidebar.collapsed .nav-item:hover::after {
+      content: attr(data-label);
+      position: fixed;
+      left: 72px;
+      background: #1e293b; color: #f1f5f9;
+      font-size: 12px; font-weight: 500;
+      padding: 6px 14px; border-radius: 8px; white-space: nowrap;
+      z-index: 9999; pointer-events: none;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      transform: translateY(-50%);
+      margin-top: 16px;
+    }
+
+    /* ══════════════════════════════
+       RIGHT COLUMN
+    ══════════════════════════════ */
+    .right-col { display: flex; flex-direction: column; flex: 1; overflow: hidden; height: 100vh; min-width: 0; }
+
+    /* ══ TOP NAVBAR ══ */
+    .top-navbar {
+      display: flex; align-items: center;
+      height: 56px; min-height: 56px;
+      background: #ffffff; border-bottom: 1px solid #e5e7eb;
+      padding: 0 16px; gap: 10px; z-index: 50;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06); flex-shrink: 0;
+    }
+
+    .hamburger-btn {
+      width: 34px; height: 34px; flex-shrink: 0;
+      border-radius: 7px; border: 1px solid #e5e7eb;
+      background: transparent; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4.5px; transition: background 0.15s;
+    }
+    .hamburger-btn:hover { background: #f3f4f6; }
+    .hamburger-btn span { display: block; width: 15px; height: 1.5px; background: #6b7280; border-radius: 2px; transition: transform 0.25s ease, opacity 0.2s ease; }
+
+    .search-bar {
+      display: flex; align-items: center; background: #f9fafb;
+      border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 0 12px; gap: 8px; height: 36px;
+      flex: 1; max-width: 360px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-bar:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); background: #fff; }
+    .search-bar svg { width: 15px; height: 15px; color: #9ca3af; flex-shrink: 0; }
+    .search-bar input { border: none; background: transparent; outline: none; font-family: 'DM Sans', sans-serif; font-size: 13.5px; color: #374151; width: 100%; min-width: 0; }
+    .search-bar input::placeholder { color: #9ca3af; }
+
+    .navbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+    .district-wrap {
+      display: flex; align-items: center;
+      background: #f9fafb; border: 1px solid #e5e7eb;
+      border-radius: 8px; padding: 0 8px 0 12px;
+      height: 36px; gap: 4px; cursor: pointer;
+    }
+    .district-wrap:hover { background: #f3f4f6; }
+    .district-wrap select {
+      border: none; background: transparent; outline: none;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+      color: #374151; cursor: pointer; appearance: none; max-width: 110px;
+    }
+    .district-wrap svg { width: 14px; height: 14px; color: #6b7280; flex-shrink: 0; }
+
+    .notif-btn {
+      position: relative; width: 36px; height: 36px;
+      border-radius: 8px; border: 1px solid #e5e7eb;
+      background: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .notif-btn:hover { background: #f9fafb; }
+    .notif-btn svg { width: 17px; height: 17px; color: #6b7280; }
+    .notif-dot { position: absolute; top: 8px; right: 8px; width: 7px; height: 7px; background: #ef4444; border-radius: 50%; border: 1.5px solid #fff; }
+
+    .user-section {
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 12px 0 6px; border-radius: 8px;
+      border: 1px solid #e5e7eb; background: #fff;
+      cursor: pointer; height: 36px; flex-shrink: 0;
+    }
+    .user-section:hover { background: #f9fafb; }
+    .user-avatar { width: 26px; height: 26px; border-radius: 50%; background: #1e3a5f; color: #fff; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .user-name { font-size: 13px; font-weight: 500; color: #374151; }
+
+    /* ══ MAIN + IFRAME ══ */
+    .main-content { flex: 1; overflow: hidden; background: #f1f5f9; position: relative; min-height: 0; }
+    #contentFrame { width: 100%; height: 100%; border: none; display: block; background: #f1f5f9; }
+
+    /* ══════════════════════════════
+       TABLET  (768px – 1024px)
+    ══════════════════════════════ */
+    @media (max-width: 1024px) {
+      .sidebar { width: 64px; min-width: 64px; }
+      .sidebar .nav-label,
+      .sidebar .logo-text,
+      .sidebar .profile-info,
+      .sidebar .section-label { opacity: 0; max-width: 0; pointer-events: none; }
+      .sidebar .section-label { padding-top: 0; padding-bottom: 0; height: 0; }
+      .sidebar .divider { opacity: 0; }
+      .sidebar .logo-wrap { justify-content: center; }
+      .sidebar .nav-item  { justify-content: center; padding-left: 0; padding-right: 0; margin: 1px 6px; }
+      .sidebar .profile-card { justify-content: center; padding: 11px 6px; }
+
+      /* tooltip on tablet icon-only sidebar */
+      .sidebar .nav-item:hover::after {
+        content: attr(data-label);
+        position: fixed;
+        left: 72px;
+        background: #1e293b; color: #f1f5f9;
+        font-size: 12px; font-weight: 500;
+        padding: 6px 14px; border-radius: 8px; white-space: nowrap;
+        z-index: 9999; pointer-events: none;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        transform: translateY(-50%);
+        margin-top: 16px;
+      }
+
+      /* Hamburger re-opens full sidebar on tablet */
+      .sidebar.open {
+        width: 240px !important;
+        min-width: 240px !important;
+        position: fixed; top: 0; left: 0; height: 100vh;
+      }
+      .sidebar.open .nav-label,
+      .sidebar.open .logo-text,
+      .sidebar.open .profile-info { opacity: 1; max-width: 200px; pointer-events: auto; }
+      .sidebar.open .section-label { opacity: 1; max-width: 200px; pointer-events: none; padding: 18px 18px 6px; height: auto; }
+      .sidebar.open .divider { opacity: 1; }
+      .sidebar.open .logo-wrap { justify-content: flex-start; }
+      .sidebar.open .nav-item  { justify-content: flex-start; padding: 9px 14px 9px 16px; margin: 1px 8px; }
+      .sidebar.open .profile-card { justify-content: flex-start; padding: 11px 13px; }
+      .sidebar.open .nav-item:hover::after { display: none; }
+
+      .search-bar { max-width: 220px; }
+      .user-name  { display: none; }
+    }
+
+    /* ══════════════════════════════
+       MOBILE  (≤ 767px)
+    ══════════════════════════════ */
+    @media (max-width: 767px) {
+      /* Sidebar hidden off-screen by default */
+      .sidebar {
+        position: fixed;
+        top: 0; left: 0; height: 100vh;
+        width: 240px !important;
+        min-width: 240px !important;
+        transform: translateX(-100%);
+        z-index: 100;
+      }
+
+      /* Show all labels when open on mobile */
+      .sidebar .nav-label,
+      .sidebar .logo-text,
+      .sidebar .profile-info { opacity: 1 !important; max-width: 200px !important; pointer-events: auto !important; }
+      .sidebar .section-label { opacity: 1 !important; max-width: 200px !important; height: auto !important; padding: 18px 18px 6px !important; pointer-events: none !important; }
+      .sidebar .divider { opacity: 1 !important; }
+      .sidebar .logo-wrap { justify-content: flex-start !important; }
+      .sidebar .nav-item  { justify-content: flex-start !important; padding: 9px 14px 9px 16px !important; margin: 1px 8px !important; }
+      .sidebar .profile-card { justify-content: flex-start !important; padding: 11px 13px !important; }
+      .sidebar .nav-item:hover::after { display: none !important; }
+
+      .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 4px 0 24px rgba(0,0,0,0.25);
+      }
+
+      /* Navbar adjustments */
+      .top-navbar { padding: 0 12px; gap: 8px; }
+      .search-bar { max-width: 160px; }
+      .district-wrap { display: none; }
+      .user-name { display: none; }
+
+      /* Hide search on very small screens */
+      @media (max-width: 380px) {
+        .search-bar { display: none; }
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Backdrop overlay for mobile -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar" id="sidebar">
+
+    <div class="logo-wrap">
+      <div class="logo-badge">UP</div>
+      <div class="logo-text">
+        <div class="logo-title">ISVMP</div>
+        <div class="logo-sub">Transport Commissioner, UP</div>
+      </div>
+    </div>
+
+    <!-- Scrollable content area -->
+    <div class="sidebar-content">
+
+    <span class="section-label">Dashboards</span>
+
+    <a class="nav-item active" href="stateDashboard.html" data-label="State Dashboard">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+      <span class="nav-label">State Dashboard</span>
+    </a>
+    <a class="nav-item active" href="commissionerMandal.html" data-label="Commissioner Mandal">
+      <i class="fa-solid fa-landmark"></i>
+      <span class="nav-label">Commissioner (Mandal)</span>
+    </a>
+    <a class="nav-item" href="districtDashboard.html" data-label="District Dashboard">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      <span class="nav-label">District Dashboard</span>
+    </a>
+    <a class="nav-item" href="dmDashboard.html" data-label="DM Dashboard">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+      <span class="nav-label">DM Dashboard</span>
+    </a>
+    <a class="nav-item" href="bsaDashboard.html" data-label="BSA Dashboard">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>
+      <span class="nav-label">BSA Dashboard</span>
+    </a>
+    <a class="nav-item active" href="beoDashboard.html" data-label="BE0 Dashboard">
+      <i class="fa-solid fa-book-open"></i>
+      <span class="nav-label">BE0 Dashboard</span>
+    </a>
+    <a class="nav-item" href="policeDashboard.html" data-label="Police Dashboard">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+      <span class="nav-label">Police Dashboard</span>
+    </a>
+    <a class="nav-item" href="schoolDashboard.html" data-label="School Dashboard">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span>
+      <span class="nav-label">School Dashboard</span>
+    </a>
+
+    <div class="divider"></div>
+    <span class="section-label">Management</span>
+
+    <a class="nav-item" href="schoolManagement.html" data-label="School Management">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      <span class="nav-label">School Management</span>
+    </a>
+    <a class="nav-item" href="busManagement.html" data-label="Bus Management">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
+      <span class="nav-label">Bus Management</span>
+    </a>
+    <a class="nav-item" href="vendorManagement.html" data-label="Vendor Management">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg></span>
+      <span class="nav-label">Vendor Management</span>
+    </a>
+    <a class="nav-item active" href="committeeDistrict.html" data-label="Committee District">
+      <i class="fa-solid fa-user-check"></i>
+      <span class="nav-label">Committee (District)</span>
+    </a>
+    <a class="nav-item active" href="committeeSchool.html" data-label="Committee School">
+      <i class="fa-solid fa-user-check"></i>
+      <span class="nav-label">Committee (School)</span>
+    </a>
+
+    <div class="divider"></div>
+    <span class="section-label">Compliance</span>
+
+    <a class="nav-item" href="complianceMonitoring.html" data-label="Compliance Monitoring">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+      <span class="nav-label">Compliance Monitoring</span>
+    </a>
+    <a class="nav-item" href="inspection.html" data-label="Inspections">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
+      <span class="nav-label">Inspections</span>
+    </a>
+    <a class="nav-item" href="violation.html" data-label="Violations">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+      <span class="nav-label">Violation</span>
+    </a>
+    <a class="nav-item" href="mapMonitoring.html" data-label="Map Monitoring">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></span>
+      <span class="nav-label">Map Monitoring</span>
+    </a>
+
+    <div class="divider"></div>
+    <span class="section-label">Forms</span>
+
+     <a class="nav-item active" href="prescribedForm.html" data-label="Prescribed Form">
+      <i class="fa-regular fa-file-lines"></i>
+      <span class="nav-label">Prescribed Form</span>
+    </a>
+
+     <a class="nav-item active" href="submissionTracker.html" data-label="Submission Tracker">
+      <i class="fa-solid fa-file"></i>
+      <span class="nav-label">Submission Tracker</span>
+    </a>
+
+    <div class="divider"></div>
+    <span class="section-label">Analytics</span>
+
+    <a class="nav-item" href="reportsAnalytics.html" data-label="Reports & Analytics">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+      <span class="nav-label">Reports & Analytics</span>
+    </a>
+    <a class="nav-item" href="districtLeaderBoard.html" data-label="District Leaderboard">
+      <i class="fa-solid fa-trophy"></i> 
+      <span class="nav-label">District Leaderboard</span>
+    </a>
+    <a class="nav-item" href="alertNotification.html" data-label="Alert Notification">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></span>
+      <span class="nav-label">Alert Notification</span>
+    </a>
+    <a class="nav-item" href="mobileInspection.html" data-label="Mobile Inspection">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
+      <span class="nav-label">Mobile Inspection</span>
+    </a>
+
+    <div class="divider"></div>
+    <span class="section-label">PUBLIC </span>
+
+     <a class="nav-item active" href="schoolBus.html" data-label="School Bus">
+      <i class="fa-brands fa-sistrix"></i>
+      <span class="nav-label">Know Your School Bus</span>
+    </a>
+
+    <div class="divider"></div>
+    <span class="section-label">System</span>
+
+    <a class="nav-item" href="userManagement.html" data-label="User Management">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>
+      <span class="nav-label">User Management</span>
+    </a>
+    <a class="nav-item" href="setting.html" data-label="Settings">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
+      <span class="nav-label">Settings</span>
+    </a>
+    <a class="nav-item" href="logIN.html" data-label="Login">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg></span>
+      <span class="nav-label">Login</span>
+    </a>
+
+    <div class="spacer"></div>
+
+    </div><!-- End of sidebar-content -->
+
+    <div class="profile-card">
+      <div class="profile-avatar">TC</div>
+      <div class="profile-info">
+        <div class="profile-name">Transport Commissioner</div>
+        <div class="profile-role">State Level · Admin</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ══ RIGHT COLUMN ══ -->
+  <div class="right-col">
+
+    <header class="top-navbar">
+      <button class="hamburger-btn" id="toggleBtn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" placeholder="Search buses, schools, districts..."/>
+      </div>
+      <div class="navbar-right">
+        <div class="district-wrap">
+          <select aria-label="Select District">
+            <option>All Districts</option>
+            <option>Lucknow</option>
+            <option>Agra</option>
+            <option>Kanpur</option>
+            <option>Varanasi</option>
+            <option>Prayagraj</option>
+            <option>Meerut</option>
+            <option>Ghaziabad</option>
+          </select>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+        <div>
+          <a href = "alertNotification.html">
+        <button class="notif-btn" title="Notifications" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 01-3.46 0"/>
+          </svg>
+          <span class="notif-dot"></span>
+        </button>
+        </a>
+        </div>
+        <div class="user-section">
+          <div class="user-avatar">TC</div>
+          <span class="user-name">Admin</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <iframe id="contentFrame" src="stateDashboard.html" title="Dashboard Content"></iframe>
+    </main>
+
+  </div>
+
+  <script>
+    const toggleBtn = document.getElementById('toggleBtn');
+    const sidebar   = document.getElementById('sidebar');
+    const overlay   = document.getElementById('overlay');
+    const frame     = document.getElementById('contentFrame');
+
+    const isMobile = () => window.innerWidth <= 767;
+    const isTablet = () => window.innerWidth > 767 && window.innerWidth <= 1024;
+
+    /* ── Toggle sidebar ── */
+    function toggleSidebar() {
+      if (isMobile()) {
+        // Mobile: slide in/out
+        const isOpen = sidebar.classList.toggle('open');
+        overlay.classList.toggle('visible', isOpen);
+        toggleBtn.classList.toggle('active', isOpen);
+      } else if (isTablet()) {
+        // Tablet: expand to full temporarily
+        const isOpen = sidebar.classList.toggle('open');
+        overlay.classList.toggle('visible', isOpen);
+        toggleBtn.classList.toggle('active', isOpen);
+      } else {
+        // Desktop: icon-only collapse
+        sidebar.classList.toggle('collapsed');
+        toggleBtn.classList.toggle('active');
+      }
+    }
+
+    toggleBtn.addEventListener('click', toggleSidebar);
+
+    /* Close sidebar when overlay tapped */
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('visible');
+      toggleBtn.classList.remove('active');
+    });
+
+    /* ── Nav link click ── */
+    document.querySelectorAll('.sidebar .nav-item').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+
+        document.querySelectorAll('.sidebar .nav-item').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+
+        const href = this.getAttribute('href');
+        if (href && href !== '#') frame.src = href;
+
+        // Close sidebar on mobile/tablet after navigation
+        if (isMobile() || isTablet()) {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('visible');
+          toggleBtn.classList.remove('active');
+        }
+      });
+    });
+
+    /* ── Handle resize ── */
+    window.addEventListener('resize', () => {
+      // Clean up states on resize
+      if (!isMobile() && !isTablet()) {
+        // Desktop: ensure no mobile/tablet open classes
+        sidebar.classList.remove('open');
+        overlay.classList.remove('visible');
+      } else {
+        // Mobile/Tablet: ensure no desktop collapsed class
+        sidebar.classList.remove('collapsed');
+      }
+      overlay.classList.remove('visible');
+      toggleBtn.classList.remove('active');
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,531 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Police Department Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f4f6f9;
+    color: #1a2332;
+    padding: 28px 32px;
+    min-height: 100vh;
+  }
+
+  .page-header { margin-bottom: 24px; }
+  .page-header h1 { font-size: 26px; font-weight: 700; color: #1a2332; }
+  .page-header p { font-size: 13px; color: #6b7a90; margin-top: 3px; }
+
+  /* Stat Cards */
+  .stat-cards {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    border-radius: 12px;
+    padding: 20px 18px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  }
+  .stat-card.blue   { background: linear-gradient(135deg, #1e3a5f 0%, #2563a8 100%); color:#fff; }
+  .stat-card.green  { background: linear-gradient(135deg, #1a7a4a 0%, #2da862 100%); color:#fff; }
+  .stat-card.amber  { background: linear-gradient(135deg, #b45309 0%, #f59e0b 100%); color:#fff; }
+  .stat-card.red1   { background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%); color:#fff; }
+  .stat-card.red2   { background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%); color:#fff; }
+  .stat-card.white  { background: #fff; color: #1a2332; }
+
+  .stat-card .label {
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.5px;
+    text-transform: uppercase; opacity: 0.85; margin-bottom: 10px; line-height: 1.4;
+  }
+  .stat-card.white .label { color: #6b7a90; opacity: 1; }
+  .stat-card .value { font-size: 38px; font-weight: 700; line-height: 1; }
+  .stat-card .sub   { font-size: 11px; opacity: 0.75; margin-top: 5px; }
+  .stat-card.white .sub { color: #8fa0b4; opacity: 1; }
+  .stat-card .icon  {
+    position: absolute; top: 16px; right: 16px;
+    font-size: 22px; opacity: 0.22;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 0;
+    border-bottom: 2px solid #e8ecf1;
+    margin-bottom: 20px;
+  }
+  .tab {
+    padding: 10px 20px;
+    font-size: 13px; font-weight: 500;
+    color: #6b7a90;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+  .tab.active { color: #1e3a5f; border-bottom-color: #1e3a5f; font-weight: 600; }
+  .tab:hover:not(.active) { color: #1a2332; }
+
+  /* Section Card */
+  .section-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .section-title { font-size: 15px; font-weight: 600; color: #1a2332; }
+
+  .search-input {
+    border: 1px solid #dde3ec;
+    border-radius: 8px;
+    padding: 7px 12px 7px 32px;
+    font-size: 13px; color: #1a2332; outline: none;
+    background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24'%3E%3Cpath d='M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z' stroke='%236b7a90' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 10px center;
+    width: 220px;
+  }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+    text-transform: uppercase; color: #8fa0b4;
+    text-align: left; padding: 10px 14px;
+    border-bottom: 1px solid #f0f3f7;
+  }
+  tbody tr { border-bottom: 1px solid #f4f6f9; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody td { padding: 14px 14px; font-size: 13px; color: #1a2332; vertical-align: middle; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge.verified  { background: #e8f9ef; color: #1a7a4a; }
+  .badge.verified  .badge-dot { background: #2da862; }
+  .badge.pending   { background: #eff6ff; color: #1d4ed8; }
+  .badge.pending   .badge-dot { background: #3b82f6; }
+  .badge.amber-b   { background: #fef3e2; color: #a05a00; }
+  .badge.amber-b   .badge-dot { background: #e67e22; }
+
+  .issued  { color: #2da862; font-weight: 600; font-size: 12px; }
+  .no-badge{ color: #e74c3c; font-weight: 600; font-size: 12px; }
+
+  /* Challan tab table extra */
+  .amount { font-weight: 600; }
+  .paid   { color: #2da862; }
+  .unpaid { color: #e74c3c; }
+
+  /* Thana Summary */
+  .thana-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .thana-card {
+    border: 1px solid #e8ecf1;
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .thana-name { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+  .thana-row  { display: flex; justify-content: space-between; font-size: 12px; color: #6b7a90; margin-bottom: 6px; }
+  .thana-val  { font-weight: 600; color: #1a2332; }
+  .mini-bar-bg   { height: 4px; background: #e8ecf1; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+  .mini-bar-fill { height: 100%; border-radius: 3px; background: #1e3a5f; }
+
+  /* Trend chart */
+  .chart-container { position: relative; height: 260px; }
+
+  /* Tab panels */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="page-header">
+  <h1>Police Department Dashboard</h1>
+  <p>Driver Verification, Enforcement &amp; Challan Monitoring — Lucknow District</p>
+</div>
+
+<!-- Stat Cards -->
+<div class="stat-cards">
+  <div class="stat-card blue">
+    <div class="label">Total Drivers</div>
+    <div class="value">6</div>
+    <div class="icon">👤</div>
+  </div>
+  <div class="stat-card green">
+    <div class="label">Police Verified</div>
+    <div class="value">3</div>
+    <div class="icon">✅</div>
+  </div>
+  <div class="stat-card amber">
+    <div class="label">Pending Verification</div>
+    <div class="value">3</div>
+    <div class="icon">🛡️</div>
+  </div>
+  <div class="stat-card red1">
+    <div class="label">Total Challans</div>
+    <div class="value">6</div>
+    <div class="icon">⚠️</div>
+  </div>
+  <div class="stat-card red2">
+    <div class="label">Unpaid Challans</div>
+    <div class="value">4</div>
+    <div class="sub">₹35,000 pending</div>
+    <div class="icon">📋</div>
+  </div>
+  <div class="stat-card white">
+    <div class="label">Speed Governor Checks</div>
+    <div class="value">498</div>
+    <div class="sub">This month</div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('driver-verification', this)">Driver Verification</div>
+  <div class="tab" onclick="switchTab('challans', this)">Challans &amp; Enforcement</div>
+  <div class="tab" onclick="switchTab('thana', this)">Thana-wise Summary</div>
+  <div class="tab" onclick="switchTab('trend', this)">Enforcement Trend</div>
+</div>
+
+<!-- Driver Verification Tab -->
+<div class="tab-panel active" id="driver-verification">
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-title">Driver Police Verification Status</div>
+      <input class="search-input" type="text" placeholder="Search driver..." id="driverSearch" oninput="filterDrivers()"/>
+    </div>
+    <table id="driverTable">
+      <thead>
+        <tr>
+          <th>Driver Name</th>
+          <th>DL Number</th>
+          <th>DL Expiry</th>
+          <th>Age</th>
+          <th>Vehicle</th>
+          <th>School</th>
+          <th>Thana</th>
+          <th>Badge</th>
+          <th>Verification</th>
+        </tr>
+      </thead>
+      <tbody id="driverTbody">
+        <tr>
+          <td><strong>Ramesh Kumar</strong></td>
+          <td style="font-family:monospace;font-size:12px;">UP3220220012345</td>
+          <td>2028-05-15</td><td>42</td>
+          <td style="font-family:monospace;font-size:12px;">UP32 AB 1234</td>
+          <td>DPS Lucknow</td><td>Sadar</td>
+          <td><span class="issued">✓ Issued</span></td>
+          <td><span class="badge verified"><span class="badge-dot"></span>Verified</span></td>
+        </tr>
+        <tr>
+          <td><strong>Sunil Yadav</strong></td>
+          <td style="font-family:monospace;font-size:12px;">UP3220210054321</td>
+          <td>2027-11-20</td><td>38</td>
+          <td style="font-family:monospace;font-size:12px;">UP32 CD 5678</td>
+          <td>City Montessori</td><td>Gomti Nagar</td>
+          <td><span class="issued">✓ Issued</span></td>
+          <td><span class="badge verified"><span class="badge-dot"></span>Verified</span></td>
+        </tr>
+        <tr>
+          <td><strong>Amit Singh</strong></td>
+          <td style="font-family:monospace;font-size:12px;">UP3220190098765</td>
+          <td>2026-06-10</td><td>45</td>
+          <td style="font-family:monospace;font-size:12px;">UP32 EF 9012</td>
+          <td>St. Xavier's</td><td>Chinhat</td>
+          <td><span class="no-badge">✗ No</span></td>
+          <td><span class="badge amber-b"><span class="badge-dot"></span>Pending</span></td>
+        </tr>
+        <tr>
+          <td><strong>Rajesh Tiwari</strong></td>
+          <td style="font-family:monospace;font-size:12px;">UP3220200076543</td>
+          <td>2029-02-28</td><td>35</td>
+          <td style="font-family:monospace;font-size:12px;">UP32 GH 3456</td>
+          <td>Army Public</td><td>Cantonment</td>
+          <td><span class="issued">✓ Issued</span></td>
+          <td><span class="badge verified"><span class="badge-dot"></span>Verified</span></td>
+        </tr>
+        <tr>
+          <td><strong>Mohammad Ali</strong></td>
+          <td style="font-family:monospace;font-size:12px;">UP3220230011111</td>
+          <td>2028-08-15</td><td>40</td>
+          <td style="font-family:monospace;font-size:12px;">UP32 IJ 7890</td>
+          <td>Modern Academy</td><td>Aliganj</td>
+          <td><span class="no-badge">✗ No</span></td>
+          <td><span class="badge pending"><span class="badge-dot"></span>Pending</span></td>
+        </tr>
+        <tr>
+          <td><strong>Vikram Chauhan</strong></td>
+          <td style="font-family:monospace;font-size:12px;">UP3220220022222</td>
+          <td>2027-03-10</td><td>33</td>
+          <td style="font-family:monospace;font-size:12px;">UP32 KL 2345</td>
+          <td>GD Goenka</td><td>Hazratganj</td>
+          <td><span class="no-badge">✗ No</span></td>
+          <td><span class="badge pending"><span class="badge-dot"></span>Pending</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Challans & Enforcement Tab -->
+<div class="tab-panel" id="challans">
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-title">Challans &amp; Enforcement Records</div>
+      <input class="search-input" type="text" placeholder="Search challan..."/>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Challan No.</th>
+          <th>Vehicle</th>
+          <th>School</th>
+          <th>Violation Type</th>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>Thana</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-family:monospace;font-size:12px;">CHL2024001</td>
+          <td style="font-family:monospace;font-size:12px;">UP32 AB 1234</td>
+          <td>DPS Lucknow</td>
+          <td>Overspeeding</td>
+          <td>2024-01-15</td>
+          <td class="amount paid">₹2,000 <span style="font-size:10px;font-weight:400">(Paid)</span></td>
+          <td>Sadar</td>
+          <td><span class="badge verified"><span class="badge-dot"></span>Paid</span></td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px;">CHL2024002</td>
+          <td style="font-family:monospace;font-size:12px;">UP32 EF 9012</td>
+          <td>St. Xavier's</td>
+          <td>No Speed Governor</td>
+          <td>2024-02-10</td>
+          <td class="amount unpaid">₹5,000 <span style="font-size:10px;font-weight:400">(Unpaid)</span></td>
+          <td>Chinhat</td>
+          <td><span class="badge amber-b"><span class="badge-dot"></span>Unpaid</span></td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px;">CHL2024003</td>
+          <td style="font-family:monospace;font-size:12px;">UP32 CD 5678</td>
+          <td>City Montessori</td>
+          <td>Overloading</td>
+          <td>2024-02-20</td>
+          <td class="amount paid">₹3,000 <span style="font-size:10px;font-weight:400">(Paid)</span></td>
+          <td>Gomti Nagar</td>
+          <td><span class="badge verified"><span class="badge-dot"></span>Paid</span></td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px;">CHL2024004</td>
+          <td style="font-family:monospace;font-size:12px;">UP32 IJ 7890</td>
+          <td>Modern Academy</td>
+          <td>No CCTV</td>
+          <td>2024-03-05</td>
+          <td class="amount unpaid">₹10,000 <span style="font-size:10px;font-weight:400">(Unpaid)</span></td>
+          <td>Aliganj</td>
+          <td><span class="badge amber-b"><span class="badge-dot"></span>Unpaid</span></td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px;">CHL2024005</td>
+          <td style="font-family:monospace;font-size:12px;">UP32 KL 2345</td>
+          <td>GD Goenka</td>
+          <td>Expired DL</td>
+          <td>2024-03-12</td>
+          <td class="amount unpaid">₹8,000 <span style="font-size:10px;font-weight:400">(Unpaid)</span></td>
+          <td>Hazratganj</td>
+          <td><span class="badge amber-b"><span class="badge-dot"></span>Unpaid</span></td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px;">CHL2024006</td>
+          <td style="font-family:monospace;font-size:12px;">UP32 GH 3456</td>
+          <td>Army Public</td>
+          <td>No GPS</td>
+          <td>2024-03-18</td>
+          <td class="amount unpaid">₹12,000 <span style="font-size:10px;font-weight:400">(Unpaid)</span></td>
+          <td>Cantonment</td>
+          <td><span class="badge amber-b"><span class="badge-dot"></span>Unpaid</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Thana-wise Summary Tab -->
+<div class="tab-panel" id="thana">
+  <div class="section-card">
+    <div class="section-title" style="margin-bottom:18px;">Thana-wise Summary</div>
+    <div class="thana-grid">
+      <div class="thana-card">
+        <div class="thana-name">Sadar</div>
+        <div class="thana-row"><span>Drivers</span><span class="thana-val">12</span></div>
+        <div class="thana-row"><span>Verified</span><span class="thana-val" style="color:#2da862;">10</span></div>
+        <div class="thana-row"><span>Challans</span><span class="thana-val" style="color:#e74c3c;">2</span></div>
+        <div class="thana-row"><span>Pending</span><span class="thana-val" style="color:#e67e22;">2</span></div>
+        <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:83%;"></div></div>
+      </div>
+      <div class="thana-card">
+        <div class="thana-name">Gomti Nagar</div>
+        <div class="thana-row"><span>Drivers</span><span class="thana-val">8</span></div>
+        <div class="thana-row"><span>Verified</span><span class="thana-val" style="color:#2da862;">7</span></div>
+        <div class="thana-row"><span>Challans</span><span class="thana-val" style="color:#e74c3c;">1</span></div>
+        <div class="thana-row"><span>Pending</span><span class="thana-val" style="color:#e67e22;">1</span></div>
+        <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:87%;"></div></div>
+      </div>
+      <div class="thana-card">
+        <div class="thana-name">Chinhat</div>
+        <div class="thana-row"><span>Drivers</span><span class="thana-val">6</span></div>
+        <div class="thana-row"><span>Verified</span><span class="thana-val" style="color:#2da862;">3</span></div>
+        <div class="thana-row"><span>Challans</span><span class="thana-val" style="color:#e74c3c;">3</span></div>
+        <div class="thana-row"><span>Pending</span><span class="thana-val" style="color:#e67e22;">3</span></div>
+        <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:50%;"></div></div>
+      </div>
+      <div class="thana-card">
+        <div class="thana-name">Cantonment</div>
+        <div class="thana-row"><span>Drivers</span><span class="thana-val">5</span></div>
+        <div class="thana-row"><span>Verified</span><span class="thana-val" style="color:#2da862;">5</span></div>
+        <div class="thana-row"><span>Challans</span><span class="thana-val" style="color:#e74c3c;">1</span></div>
+        <div class="thana-row"><span>Pending</span><span class="thana-val" style="color:#e67e22;">0</span></div>
+        <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:100%;"></div></div>
+      </div>
+      <div class="thana-card">
+        <div class="thana-name">Aliganj</div>
+        <div class="thana-row"><span>Drivers</span><span class="thana-val">9</span></div>
+        <div class="thana-row"><span>Verified</span><span class="thana-val" style="color:#2da862;">5</span></div>
+        <div class="thana-row"><span>Challans</span><span class="thana-val" style="color:#e74c3c;">4</span></div>
+        <div class="thana-row"><span>Pending</span><span class="thana-val" style="color:#e67e22;">4</span></div>
+        <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:55%;"></div></div>
+      </div>
+      <div class="thana-card">
+        <div class="thana-name">Hazratganj</div>
+        <div class="thana-row"><span>Drivers</span><span class="thana-val">7</span></div>
+        <div class="thana-row"><span>Verified</span><span class="thana-val" style="color:#2da862;">4</span></div>
+        <div class="thana-row"><span>Challans</span><span class="thana-val" style="color:#e74c3c;">2</span></div>
+        <div class="thana-row"><span>Pending</span><span class="thana-val" style="color:#e67e22;">3</span></div>
+        <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:57%;"></div></div>
+      </div>
+      <div class="thana-card">
+        <div class="thana-name">Indira Nagar</div>
+        <div class="thana-row"><span>Drivers</span><span class="thana-val">11</span></div>
+        <div class="thana-row"><span>Verified</span><span class="thana-val" style="color:#2da862;">8</span></div>
+        <div class="thana-row"><span>Challans</span><span class="thana-val" style="color:#e74c3c;">2</span></div>
+        <div class="thana-row"><span>Pending</span><span class="thana-val" style="color:#e67e22;">3</span></div>
+        <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:72%;"></div></div>
+      </div>
+      <div class="thana-card">
+        <div class="thana-name">Kaiserbagh</div>
+        <div class="thana-row"><span>Drivers</span><span class="thana-val">4</span></div>
+        <div class="thana-row"><span>Verified</span><span class="thana-val" style="color:#2da862;">2</span></div>
+        <div class="thana-row"><span>Challans</span><span class="thana-val" style="color:#e74c3c;">1</span></div>
+        <div class="thana-row"><span>Pending</span><span class="thana-val" style="color:#e67e22;">2</span></div>
+        <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:50%;"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Enforcement Trend Tab -->
+<div class="tab-panel" id="trend">
+  <div class="section-card">
+    <div class="section-title" style="margin-bottom:18px;">Monthly Enforcement Trend</div>
+    <div class="chart-container">
+      <canvas id="trendChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tab switching
+function switchTab(id, el) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+  if (id === 'trend' && !window.trendChartBuilt) buildTrendChart();
+}
+
+// Driver search filter
+function filterDrivers() {
+  const q = document.getElementById('driverSearch').value.toLowerCase();
+  document.querySelectorAll('#driverTbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+// Trend Chart
+function buildTrendChart() {
+  window.trendChartBuilt = true;
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
+      datasets: [
+        {
+          label: 'Speed Governor Checks',
+          data: [320, 380, 410, 460, 490, 498],
+          borderColor: '#1e3a5f', backgroundColor: 'rgba(30,58,95,0.08)',
+          tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#1e3a5f'
+        },
+        {
+          label: 'Challans Issued',
+          data: [8, 10, 7, 12, 9, 6],
+          borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.07)',
+          tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#dc2626',
+          yAxisID: 'y2'
+        },
+        {
+          label: 'Drivers Verified',
+          data: [18, 22, 20, 28, 25, 30],
+          borderColor: '#2da862', backgroundColor: 'rgba(45,168,98,0.07)',
+          tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#2da862',
+          yAxisID: 'y2'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: 'DM Sans', size: 12 }, padding: 16, usePointStyle: true } },
+        tooltip: { bodyFont: { family: 'DM Sans' }, titleFont: { family: 'DM Sans' } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 12 } } },
+        y: {
+          position: 'left', grid: { color: '#f0f3f7' },
+          ticks: { font: { family: 'DM Sans', size: 11 } },
+          title: { display: true, text: 'Governor Checks', font: { family: 'DM Sans', size: 11 } }
+        },
+        y2: {
+          position: 'right', grid: { display: false },
+          ticks: { font: { family: 'DM Sans', size: 11 } },
+          title: { display: true, text: 'Challans / Verifications', font: { family: 'DM Sans', size: 11 } }
+        }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>

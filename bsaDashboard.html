@@ -1,0 +1,747 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BSA Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f4f6f9;
+    color: #1a2332;
+    padding: 28px 32px;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .page-header { margin-bottom: 24px; }
+  .page-header h1 { font-size: 26px; font-weight: 700; color: #1a2332; }
+  .page-header p { font-size: 13px; color: #6b7a90; margin-top: 3px; }
+
+  /* Stat Cards Row */
+  .stat-cards {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    border-radius: 12px;
+    padding: 20px 18px;
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .stat-card.blue { background: linear-gradient(135deg, #1e3a5f 0%, #2563a8 100%); color: #fff; }
+  .stat-card.green { background: linear-gradient(135deg, #1a7a4a 0%, #2da862 100%); color: #fff; }
+  .stat-card.teal { background: linear-gradient(135deg, #1a6a6a 0%, #2aa8a8 100%); color: #fff; }
+  .stat-card.white { background: #fff; color: #1a2332; }
+  .stat-card.red { background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); color: #fff; }
+
+  .stat-card .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    opacity: 0.85;
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .stat-card .value {
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .stat-card .sub {
+    font-size: 11px;
+    opacity: 0.75;
+    margin-top: 5px;
+  }
+  .stat-card .icon {
+    position: absolute;
+    top: 16px; right: 16px;
+    width: 32px; height: 32px;
+    opacity: 0.22;
+    font-size: 24px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .stat-card.white .label { color: #6b7a90; }
+  .stat-card.white .value { color: #1a2332; }
+  .stat-card.white .sub { color: #8fa0b4; }
+
+  /* Progress Section */
+  .section-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a2332;
+    margin-bottom: 20px;
+  }
+
+  .progress-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+  .progress-item { }
+  .progress-item .prog-label { font-size: 12px; color: #6b7a90; margin-bottom: 6px; }
+  .progress-item .prog-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a2332;
+    margin-bottom: 8px;
+  }
+  .progress-item .prog-value span { font-size: 14px; font-weight: 400; color: #8fa0b4; }
+  .progress-bar-bg {
+    height: 6px;
+    background: #e8ecf1;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 5px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.8s ease;
+  }
+  .prog-pct { font-size: 11px; color: #8fa0b4; }
+
+  /* Chart Section */
+  .chart-container { position: relative; height: 280px; }
+
+  /* Table Section */
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .table-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .search-input {
+    border: 1px solid #dde3ec;
+    border-radius: 8px;
+    padding: 7px 12px 7px 32px;
+    font-size: 13px;
+    color: #1a2332;
+    outline: none;
+    background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%236b7a90' viewBox='0 0 24 24'%3E%3Cpath d='M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z' stroke='%236b7a90' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 10px center;
+    width: 200px;
+  }
+  .filter-select {
+    border: 1px solid #dde3ec;
+    border-radius: 8px;
+    padding: 7px 30px 7px 12px;
+    font-size: 13px;
+    color: #1a2332;
+    outline: none;
+    background: #f8fafc;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #8fa0b4;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0f3f7;
+  }
+  tbody tr { border-bottom: 1px solid #f4f6f9; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody td {
+    padding: 14px 14px;
+    font-size: 13px;
+    color: #1a2332;
+    vertical-align: middle;
+  }
+  .rank { font-weight: 700; color: #6b7a90; }
+  .school-name { font-weight: 600; }
+  .gps-ok { color: #2da862; font-weight: 600; }
+  .gps-warn { color: #e67e22; font-weight: 600; }
+  .gps-bad { color: #e74c3c; font-weight: 600; }
+  .check { color: #2da862; font-size: 16px; }
+  .cross { color: #e74c3c; font-size: 16px; }
+  .score-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .score-bar-bg { width: 60px; height: 6px; background: #e8ecf1; border-radius: 4px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 4px; }
+  .score-pct { font-size: 12px; font-weight: 600; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge.compliant { background: #e8f9ef; color: #1a7a4a; }
+  .badge.compliant .badge-dot { background: #2da862; }
+  .badge.warning { background: #fef3e2; color: #a05a00; }
+  .badge.warning .badge-dot { background: #e67e22; }
+  .badge.violation { background: #fdecea; color: #c0392b; }
+  .badge.violation .badge-dot { background: #e74c3c; }
+
+  .violations-count { font-weight: 600; color: #1a2332; }
+
+  /* ══════════════════════════════════════════════════════════════════
+     RESPONSIVE DESIGN
+  ══════════════════════════════════════════════════════════════════ */
+  
+  /* ── TABLET (768px – 1024px) ── */
+  @media (max-width: 1024px) {
+    body { padding: 20px 24px; }
+    
+    .page-header h1 { font-size: 22px; }
+    .page-header p { font-size: 12px; }
+    
+    .stat-cards {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-card {
+      padding: 16px 14px;
+      border-radius: 10px;
+    }
+    
+    .stat-card .label { font-size: 10px; margin-bottom: 8px; }
+    .stat-card .value { font-size: 28px; }
+    .stat-card .sub { font-size: 10px; }
+    .stat-card .icon { width: 28px; height: 28px; font-size: 20px; }
+    
+    .section-card {
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+    
+    .section-title { font-size: 14px; margin-bottom: 16px; }
+    
+    .progress-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    
+    .progress-item .prog-value { font-size: 20px; }
+    
+    .table-header {
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    
+    .table-search { gap: 8px; }
+    .search-input { width: 160px; font-size: 12px; }
+    .filter-select { font-size: 12px; }
+    
+    table { font-size: 12px; }
+    thead th { font-size: 10px; padding: 8px 10px; }
+    tbody td { padding: 10px; font-size: 12px; }
+  }
+  
+  /* ── MOBILE (max-width: 767px) ── */
+  @media (max-width: 767px) {
+    body {
+      padding: 14px 12px;
+      font-size: 13px;
+    }
+    
+    .page-header { margin-bottom: 16px; }
+    .page-header h1 { font-size: 18px; }
+    .page-header p { font-size: 11px; }
+    
+    /* Stat cards - 2 columns */
+    .stat-cards {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    
+    .stat-card {
+      padding: 12px 10px;
+      border-radius: 8px;
+    }
+    
+    .stat-card .label { font-size: 9px; margin-bottom: 6px; }
+    .stat-card .value { font-size: 22px; }
+    .stat-card .sub { font-size: 9px; margin-top: 3px; }
+    .stat-card .icon { width: 24px; height: 24px; font-size: 18px; right: 10px; top: 10px; }
+    
+    /* Section cards */
+    .section-card {
+      border-radius: 10px;
+      padding: 14px 12px;
+      margin-bottom: 14px;
+    }
+    
+    .section-title { font-size: 12px; margin-bottom: 12px; }
+    
+    /* Progress grid - single column */
+    .progress-grid {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    
+    .progress-item .prog-label { font-size: 11px; }
+    .progress-item .prog-value { font-size: 18px; }
+    .progress-item .prog-value span { font-size: 12px; }
+    .progress-bar-bg { height: 5px; margin-bottom: 4px; }
+    .prog-pct { font-size: 10px; }
+    
+    /* Chart adjustments */
+    .chart-container { height: 240px; }
+    
+    /* Table header - stacked */
+    .table-header {
+      flex-direction: column;
+      gap: 10px;
+      align-items: stretch;
+      margin-bottom: 12px;
+    }
+    
+    .section-title { margin-bottom: 0; padding-bottom: 10px; }
+    
+    .table-search {
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+    
+    .search-input {
+      width: 100%;
+      font-size: 12px;
+      padding: 8px 12px 8px 32px;
+    }
+    
+    .filter-select {
+      width: 100%;
+      font-size: 12px;
+      padding: 8px 12px;
+    }
+    
+    /* Table scrollable */
+    .section-card:last-child {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 14px;
+    }
+    
+    table { font-size: 11px; }
+    thead th {
+      font-size: 9px;
+      padding: 6px 8px;
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 8px 6px;
+      font-size: 11px;
+    }
+    
+    /* Hide columns on mobile */
+    thead th:nth-child(n+7),
+    tbody td:nth-child(n+7) {
+      display: none;
+    }
+    
+    .rank { font-size: 10px; }
+    .school-name { font-size: 11px; font-weight: 600; }
+    .badge { font-size: 9px; padding: 3px 8px; }
+    .score-bar-wrap { gap: 6px; }
+    .score-bar-bg { width: 50px; height: 5px; }
+    .score-pct { font-size: 10px; }
+    
+    /* Status pills adjust */
+    .check, .cross { font-size: 14px; }
+  }
+  
+  /* ── EXTRA SMALL (max-width: 480px) ── */
+  @media (max-width: 480px) {
+    body {
+      padding: 12px 10px;
+    }
+    
+    .page-header { margin-bottom: 12px; }
+    .page-header h1 { font-size: 16px; }
+    .page-header p { font-size: 10px; }
+    
+    .stat-cards {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    
+    .stat-card {
+      padding: 10px 8px;
+    }
+    
+    .stat-card .label { font-size: 8px; }
+    .stat-card .value { font-size: 20px; }
+    .stat-card .sub { font-size: 8px; }
+    .stat-card .icon { width: 20px; height: 20px; font-size: 16px; }
+    
+    .section-card { padding: 12px 10px; margin-bottom: 12px; }
+    .section-title { font-size: 11px; margin-bottom: 10px; }
+    
+    .progress-item .prog-label { font-size: 10px; }
+    .progress-item .prog-value { font-size: 16px; }
+    .progress-item .prog-value span { font-size: 11px; }
+    
+    .chart-container { height: 200px; }
+    
+    .table-search { gap: 6px; }
+    .search-input { font-size: 11px; padding: 6px 10px 6px 30px; }
+    .filter-select { font-size: 11px; padding: 6px 10px; }
+    
+    table { font-size: 10px; }
+    thead th { font-size: 8px; padding: 5px 4px; }
+    tbody td { padding: 6px 4px; font-size: 10px; }
+    
+    .badge { font-size: 8px; padding: 2px 6px; }
+    .score-bar-bg { width: 40px; height: 4px; }
+    .score-pct { font-size: 9px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Page Header -->
+<div class="page-header">
+  <h1>BSA Dashboard</h1>
+  <p>Education Department — School Compliance &amp; Onboarding Monitoring</p>
+</div>
+
+<!-- Stat Cards -->
+<div class="stat-cards">
+  <div class="stat-card blue">
+    <div class="label">Schools With Buses</div>
+    <div class="value">524</div>
+    <div class="icon">🏫</div>
+  </div>
+  <div class="stat-card green">
+    <div class="label">Schools Onboarded</div>
+    <div class="value">420</div>
+    <div class="sub">80% of 524</div>
+    <div class="icon">✅</div>
+  </div>
+  <div class="stat-card teal">
+    <div class="label">Vehicles Onboarded</div>
+    <div class="value">965</div>
+    <div class="sub">90% of 1078</div>
+    <div class="icon">🚌</div>
+  </div>
+  <div class="stat-card white">
+    <div class="label">Affidavits Uploaded</div>
+    <div class="value">380</div>
+    <div class="sub">73%</div>
+    <div class="icon">📄</div>
+  </div>
+  <div class="stat-card white">
+    <div class="label">Transport Coordinators</div>
+    <div class="value">410</div>
+    <div class="sub">78%</div>
+    <div class="icon">👤</div>
+  </div>
+  <div class="stat-card red">
+    <div class="label">Non-Compliant</div>
+    <div class="value">89</div>
+    <div class="icon">🛡️</div>
+  </div>
+</div>
+
+<!-- Onboarding Progress -->
+<div class="section-card">
+  <div class="section-title">Onboarding &amp; Documentation Progress</div>
+  <div class="progress-grid">
+    <div class="progress-item">
+      <div class="prog-label">School Registration</div>
+      <div class="prog-value">420<span>/524</span></div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width:80%; background: #e67e22;"></div>
+      </div>
+      <div class="prog-pct">80% complete</div>
+    </div>
+    <div class="progress-item">
+      <div class="prog-label">Vehicle Onboarding</div>
+      <div class="prog-value">965<span>/1078</span></div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width:90%; background: #2da862;"></div>
+      </div>
+      <div class="prog-pct">90% complete</div>
+    </div>
+    <div class="progress-item">
+      <div class="prog-label">Affidavit Upload</div>
+      <div class="prog-value">380<span>/524</span></div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width:73%; background: #e67e22;"></div>
+      </div>
+      <div class="prog-pct">73% complete</div>
+    </div>
+    <div class="progress-item">
+      <div class="prog-label">Transport Coordinator Designation</div>
+      <div class="prog-value">410<span>/524</span></div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width:78%; background: #e67e22;"></div>
+      </div>
+      <div class="prog-pct">78% complete</div>
+    </div>
+  </div>
+</div>
+
+<!-- Block-wise Chart -->
+<div class="section-card">
+  <div class="section-title">Block-wise Multi-Parameter Compliance</div>
+  <div class="chart-container">
+    <canvas id="blockChart"></canvas>
+  </div>
+</div>
+
+<!-- School Safety & Compliance Ranking Table -->
+<div class="section-card">
+  <div class="table-header">
+    <div class="section-title" style="margin-bottom:0;">School Safety &amp; Compliance Ranking</div>
+    <div class="table-search">
+      <input class="search-input" type="text" placeholder="Search schools..."/>
+      <select class="filter-select">
+        <option>All Blocks</option>
+        <option>Sadar</option>
+        <option>Chinhat</option>
+        <option>BKT</option>
+        <option>Mohanlalganj</option>
+        <option>Kakori</option>
+        <option>Malihabad</option>
+        <option>Mall</option>
+      </select>
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>School Name</th>
+        <th>Block</th>
+        <th>Buses</th>
+        <th>GPS</th>
+        <th>CCTV</th>
+        <th>Drivers ✓</th>
+        <th>Committee</th>
+        <th>Affidavit</th>
+        <th>Score</th>
+        <th>Violations</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="rank">#1</td>
+        <td class="school-name">Delhi Public School</td>
+        <td>Sadar</td>
+        <td>12</td>
+        <td class="gps-ok">12/12</td>
+        <td class="gps-ok">12/12</td>
+        <td class="gps-ok">12/12</td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:96%;background:#2da862;"></div></div>
+            <span class="score-pct">96%</span>
+          </div>
+        </td>
+        <td class="violations-count">0</td>
+        <td><span class="badge compliant"><span class="badge-dot"></span>Compliant</span></td>
+      </tr>
+      <tr>
+        <td class="rank">#2</td>
+        <td class="school-name">Modern Academy</td>
+        <td>Chinhat</td>
+        <td>7</td>
+        <td class="gps-ok">7/7</td>
+        <td class="gps-ok">7/7</td>
+        <td class="gps-ok">7/7</td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:94%;background:#2da862;"></div></div>
+            <span class="score-pct">94%</span>
+          </div>
+        </td>
+        <td class="violations-count">0</td>
+        <td><span class="badge compliant"><span class="badge-dot"></span>Compliant</span></td>
+      </tr>
+      <tr>
+        <td class="rank">#3</td>
+        <td class="school-name">Kendriya Vidyalaya</td>
+        <td>BKT</td>
+        <td>4</td>
+        <td class="gps-ok">4/4</td>
+        <td class="gps-warn">3/4</td>
+        <td class="gps-ok">4/4</td>
+        <td><span class="check">✓</span></td>
+        <td><span class="check">✓</span></td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:91%;background:#2da862;"></div></div>
+            <span class="score-pct">91%</span>
+          </div>
+        </td>
+        <td class="violations-count">1</td>
+        <td><span class="badge compliant"><span class="badge-dot"></span>Compliant</span></td>
+      </tr>
+      <tr>
+        <td class="rank">#4</td>
+        <td class="school-name">GD Goenka Public School</td>
+        <td>Sadar</td>
+        <td>10</td>
+        <td class="gps-warn">8/10</td>
+        <td class="gps-warn">7/10</td>
+        <td class="gps-warn">9/10</td>
+        <td><span class="check">✓</span></td>
+        <td><span class="cross">✗</span></td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:82%;background:#2da862;"></div></div>
+            <span class="score-pct">82%</span>
+          </div>
+        </td>
+        <td class="violations-count">3</td>
+        <td><span class="badge warning"><span class="badge-dot"></span>Warning</span></td>
+      </tr>
+      <tr>
+        <td class="rank">#5</td>
+        <td class="school-name">City Montessori School</td>
+        <td>Mohanlalganj</td>
+        <td>28</td>
+        <td class="gps-warn">20/28</td>
+        <td class="gps-warn">15/28</td>
+        <td class="gps-warn">22/28</td>
+        <td><span class="cross">✗</span></td>
+        <td><span class="cross">✗</span></td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:67%;background:#e67e22;"></div></div>
+            <span class="score-pct">67%</span>
+          </div>
+        </td>
+        <td class="violations-count">8</td>
+        <td><span class="badge warning"><span class="badge-dot"></span>Warning</span></td>
+      </tr>
+      <tr>
+        <td class="rank">#6</td>
+        <td class="school-name">Ryan International</td>
+        <td>Kakori</td>
+        <td>15</td>
+        <td class="gps-warn">9/15</td>
+        <td class="gps-bad">6/15</td>
+        <td class="gps-warn">10/15</td>
+        <td><span class="cross">✗</span></td>
+        <td><span class="cross">✗</span></td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:55%;background:#e74c3c;"></div></div>
+            <span class="score-pct">55%</span>
+          </div>
+        </td>
+        <td class="violations-count">12</td>
+        <td><span class="badge violation"><span class="badge-dot"></span>Violation</span></td>
+      </tr>
+      <tr>
+        <td class="rank">#7</td>
+        <td class="school-name">St. Francis College</td>
+        <td>Malihabad</td>
+        <td>6</td>
+        <td class="gps-warn">3/6</td>
+        <td class="gps-bad">2/6</td>
+        <td class="gps-warn">4/6</td>
+        <td><span class="cross">✗</span></td>
+        <td><span class="cross">✗</span></td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:48%;background:#e74c3c;"></div></div>
+            <span class="score-pct">48%</span>
+          </div>
+        </td>
+        <td class="violations-count">9</td>
+        <td><span class="badge violation"><span class="badge-dot"></span>Violation</span></td>
+      </tr>
+      <tr>
+        <td class="rank">#8</td>
+        <td class="school-name">Public Inter College</td>
+        <td>Mall</td>
+        <td>3</td>
+        <td class="gps-bad">1/3</td>
+        <td class="gps-bad">0/3</td>
+        <td class="gps-bad">2/3</td>
+        <td><span class="cross">✗</span></td>
+        <td><span class="cross">✗</span></td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:42%;background:#e74c3c;"></div></div>
+            <span class="score-pct">42%</span>
+          </div>
+        </td>
+        <td class="violations-count">5</td>
+        <td><span class="badge violation"><span class="badge-dot"></span>Violation</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+const blocks = ['Sadar', 'Mohanlalganj', 'Malihabad', 'BKT', 'Chinhat', 'Kakori', 'Mall', 'Nagar'];
+const overall  = [85, 75, 70, 20, 78, 82, 68, 80];
+const onboarded= [92, 80, 78, 90, 85, 88, 72, 88];
+const committee= [80, 72, 65, 85, 82, 75, 68, 70];
+const driver   = [78, 68, 60, 82, 79, 72, 62, 65];
+
+const ctx = document.getElementById('blockChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: blocks,
+    datasets: [
+      { label: 'Overall',    data: overall,   backgroundColor: '#1e3a5f', borderRadius: 4 },
+      { label: 'Onboarded',  data: onboarded, backgroundColor: '#2da862', borderRadius: 4 },
+      { label: 'Committee',  data: committee, backgroundColor: '#e67e22', borderRadius: 4 },
+      { label: 'Driver ✓',   data: driver,    backgroundColor: '#7e57c2', borderRadius: 4 },
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { font: { family: 'DM Sans', size: 12 }, padding: 16, usePointStyle: true, pointStyleWidth: 10 }
+      },
+      tooltip: { bodyFont: { family: 'DM Sans' }, titleFont: { family: 'DM Sans' } }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 12 } } },
+      y: { min: 0, max: 100, grid: { color: '#f0f3f7' }, ticks: { font: { family: 'DM Sans', size: 11 } } }
+    },
+    barPercentage: 0.85,
+    categoryPercentage: 0.7,
+  }
+});
+</script>
+</body>
+</html>

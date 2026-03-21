@@ -1,0 +1,828 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISVMP — District Transport Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --main-bg: #f1f5f9;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --blue: #2563eb;
+    --green: #16a34a;
+    --red: #dc2626;
+    --orange: #d97706;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--main-bg);
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+
+  .content {
+    padding: 22px 24px;
+    overflow-y: auto;
+  }
+
+  /* ── STAT CARDS ── */
+  .cards-row {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card.colored { border: none; }
+  .stat-card.blue-card  { background: #1e40af; }
+  .stat-card.green-card { background: #15803d; }
+  .stat-card.red-card   { background: #b91c1c; }
+  .stat-card.orange-card{ background: #b45309; }
+
+  .card-label {
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--text-secondary); margin-bottom: 6px;
+  }
+  .stat-card.colored .card-label { color: rgba(255,255,255,0.75); }
+
+  .card-value { font-size: 22px; font-weight: 700; color: var(--text-primary); line-height: 1.1; }
+  .stat-card.colored .card-value { color: white; }
+
+  .card-sub { font-size: 10.5px; color: var(--text-secondary); margin-top: 3px; }
+  .stat-card.colored .card-sub { color: rgba(255,255,255,0.65); }
+
+  .card-icon {
+    position: absolute; right: 12px; top: 12px;
+    width: 28px; height: 28px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.06);
+  }
+  .stat-card.colored .card-icon { background: rgba(255,255,255,0.15); }
+
+  /* ── SECTION CARD ── */
+  .section-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: 13.5px; font-weight: 600;
+    color: var(--text-primary); margin-bottom: 14px;
+  }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+
+  thead th {
+    padding: 9px 10px; text-align: left;
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--text-secondary); border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    color: var(--text-primary); white-space: nowrap;
+  }
+
+  tbody tr:hover td { background: #f8fafc; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .num-green  { color: #16a34a; font-weight: 500; }
+  .num-red    { color: #dc2626; font-weight: 500; }
+  .num-orange { color: #d97706; font-weight: 500; }
+
+  /* ── STATUS PILLS ── */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 12px;
+    font-size: 10.5px; font-weight: 600;
+  }
+  .pill-red    { background: #fee2e2; color: #b91c1c; }
+  .pill-orange { background: #fef3c7; color: #92400e; }
+  .pill-blue   { background: #dbeafe; color: #1d4ed8; }
+  .pill-green  { background: #dcfce7; color: #15803d; }
+  .pill-dot    { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  .mono { font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  /* ── TWO COL ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* ── PAGE HEADER ── */
+  .page-header {
+    display: flex; align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .page-header h1 { font-size: 21px; font-weight: 700; }
+  .page-header p  { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+  .district-selector {
+    display: flex; align-items: center; gap: 8px;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 14px; background: white; cursor: pointer;
+    font-size: 13px; font-weight: 500;
+  }
+
+  /* ── EXPIRY ALERTS GRID ── */
+  .expiry-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+
+  .expiry-box {
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px;
+  }
+
+  .expiry-box .eb-title {
+    font-size: 11px; color: var(--text-secondary);
+    font-weight: 600; margin-bottom: 8px;
+  }
+
+  .expiry-box .eb-nums {
+    display: flex; gap: 16px; align-items: baseline;
+  }
+
+  .eb-num { font-size: 22px; font-weight: 700; }
+  .eb-sub { font-size: 10.5px; color: var(--text-secondary); margin-top: 1px; }
+
+  /* ── TABS ── */
+  .tab-bar {
+    display: flex; gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px; padding-bottom: 0;
+  }
+
+  .tab-btn {
+    padding: 8px 16px; border: none; background: none;
+    cursor: pointer; font-family: inherit; font-size: 12.5px;
+    font-weight: 500; color: var(--text-secondary);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+
+  .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  /* ── QUICK ACTIONS ── */
+  .qa-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  }
+
+  .qa-card {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; display: flex; align-items: center;
+    gap: 12px; cursor: pointer; transition: background 0.15s;
+    background: white;
+  }
+
+  .qa-card:hover { background: #f8fafc; }
+
+  .qa-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  .qa-title { font-size: 12.5px; font-weight: 600; }
+  .qa-sub   { font-size: 11px; color: var(--text-secondary); }
+
+  /* ── ACTION BTN ── */
+  .action-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 10px; border: 1px solid var(--border);
+    border-radius: 6px; background: white; font-family: inherit;
+    font-size: 11.5px; cursor: pointer; color: var(--text-primary);
+    transition: background 0.15s;
+  }
+  .action-btn:hover { background: #f8fafc; }
+
+  /* ══════════════════════════════
+     RESPONSIVE DESIGN
+  ══════════════════════════════ */
+  
+  /* ── TABLET (768px – 1024px) ── */
+  @media (max-width: 1024px) {
+    .content { padding: 18px 20px; }
+    
+    .page-header { flex-direction: column; gap: 12px; }
+    .page-header h1 { font-size: 18px; }
+    
+    .cards-row {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    
+    .stat-card { padding: 12px; }
+    .card-label { font-size: 10px; }
+    .card-value { font-size: 18px; }
+    
+    .expiry-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    
+    .two-col {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    
+    .qa-grid { grid-template-columns: repeat(2, 1fr); }
+    .qa-card { padding: 12px 14px; }
+    .qa-title { font-size: 12px; }
+    .qa-sub { font-size: 10px; }
+  }
+  
+  /* ── MOBILE (max-width: 767px) ── */
+  @media (max-width: 767px) {
+    .content { padding: 14px 12px; }
+    
+    .page-header { flex-direction: column; gap: 10px; margin-bottom: 14px; }
+    .page-header h1 { font-size: 16px; }
+    .page-header p { font-size: 11px; }
+    
+    .district-selector {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    
+    /* Single column stat cards on mobile */
+    .cards-row {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .stat-card {
+      padding: 10px;
+      border-radius: 8px;
+    }
+    
+    .card-label { font-size: 9px; }
+    .card-value { font-size: 16px; }
+    .card-sub { font-size: 10px; }
+    .card-icon { width: 24px; height: 24px; }
+    .card-icon svg { width: 12px; height: 12px; }
+    
+    /* Section adjustments */
+    .section-card {
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+    
+    .section-title {
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+    
+    /* Expiry grid - single column */
+    .expiry-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    
+    .expiry-box {
+      padding: 10px 12px;
+      border-radius: 6px;
+    }
+    
+    .expiry-box .eb-title { font-size: 10px; margin-bottom: 6px; }
+    .eb-num { font-size: 18px; }
+    .eb-sub { font-size: 9px; }
+    
+    /* Table scrollable on mobile */
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: -12px -14px;
+      padding: 0 14px;
+    }
+    
+    table { font-size: 11px; }
+    thead th { font-size: 9px; padding: 7px 6px; }
+    tbody td { padding: 7px 6px; font-size: 11px; }
+    
+    /* Hide columns on mobile for better readability */
+    thead th:nth-child(n+5),
+    tbody td:nth-child(n+5) {
+      display: none;
+    }
+    
+    /* Tab adjustments */
+    .tab-bar {
+      gap: 0;
+      margin-bottom: 12px;
+      padding-bottom: 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .tab-btn {
+      padding: 7px 12px;
+      font-size: 11px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    
+    /* Two column layout - single on mobile */
+    .two-col {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    
+    /* Quick actions - single column */
+    .qa-grid { grid-template-columns: 1fr; }
+    
+    .qa-card {
+      padding: 10px 12px;
+      flex-direction: row;
+      gap: 10px;
+    }
+    
+    .qa-icon { width: 30px; height: 30px; }
+    .qa-icon svg { width: 13px; height: 13px; }
+    .qa-title { font-size: 11px; }
+    .qa-sub { font-size: 10px; }
+    
+    /* Button text truncate on mobile */
+    .action-btn {
+      padding: 4px 8px;
+      font-size: 10px;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+    }
+    
+    .action-btn svg { width: 9px; height: 9px; }
+    
+    /* Status pills adjust */
+    .status-pill {
+      padding: 2px 6px;
+      font-size: 9px;
+    }
+    
+    .mono { font-size: 11px; }
+  }
+  
+  /* ── EXTRA SMALL MOBILE (max-width: 480px) ── */
+  @media (max-width: 480px) {
+    .content { padding: 12px 10px; }
+    
+    .page-header h1 { font-size: 14px; }
+    .page-header p { font-size: 10px; }
+    
+    .cards-row { grid-template-columns: 1fr; }
+    .card-value { font-size: 14px; }
+    .card-label { font-size: 8px; }
+    
+    .section-card { padding: 10px 12px; margin-bottom: 10px; }
+    .section-title { font-size: 11px; }
+    
+    .expiry-grid { gap: 8px; }
+    .eb-nums { gap: 12px; }
+    .eb-num { font-size: 16px; }
+    
+    .tab-btn { padding: 6px 10px; font-size: 10px; }
+    
+    .qa-title { font-size: 10px; }
+    .qa-sub { font-size: 9px; }
+  }
+
+</style>
+</head>
+<body>
+<div class="content">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div>
+      <h1>District Transport Dashboard</h1>
+      <p>RTO / ARTO View — District Level Monitoring</p>
+    </div>
+    <div class="district-selector">
+      Lucknow
+      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+  </div>
+
+  <!-- STAT CARDS -->
+  <div class="cards-row">
+    <div class="stat-card">
+      <div class="card-label">Total Schools</div>
+      <div class="card-value">524</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      </div>
+    </div>
+    <div class="stat-card colored blue-card">
+      <div class="card-label">Total Vehicles</div>
+      <div class="card-value">1,078</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      </div>
+    </div>
+    <div class="stat-card colored green-card">
+      <div class="card-label">Compliant</div>
+      <div class="card-value">900</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+    </div>
+    <div class="stat-card colored red-card">
+      <div class="card-label">Non-Compliant</div>
+      <div class="card-value">178</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+    </div>
+    <div class="stat-card colored green-card">
+      <div class="card-label">Drivers Verified</div>
+      <div class="card-value">941</div>
+      <div class="card-sub">87% of 1,078</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="card-label">GPS Active</div>
+      <div class="card-value">832</div>
+      <div class="card-sub">77% coverage</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="card-label">CCTV Installed</div>
+      <div class="card-value">745</div>
+      <div class="card-sub">69% coverage</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+    </div>
+    <div class="stat-card colored orange-card">
+      <div class="card-label">Pending Inspections</div>
+      <div class="card-value">81</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCUMENT EXPIRY ALERTS -->
+  <div class="section-card">
+    <div class="section-title">Document Expiry Alerts (30-day window)</div>
+    <div class="expiry-grid">
+      <div class="expiry-box">
+        <div class="eb-title">Fitness Certificate</div>
+        <div class="eb-nums">
+          <div><div class="eb-num" style="color:#d97706;">45</div><div class="eb-sub">Expiring</div></div>
+          <div><div class="eb-num" style="color:#dc2626;">12</div><div class="eb-sub">Expired</div></div>
+        </div>
+      </div>
+      <div class="expiry-box">
+        <div class="eb-title">Insurance</div>
+        <div class="eb-nums">
+          <div><div class="eb-num" style="color:#d97706;">38</div><div class="eb-sub">Expiring</div></div>
+          <div><div class="eb-num" style="color:#dc2626;">8</div><div class="eb-sub">Expired</div></div>
+        </div>
+      </div>
+      <div class="expiry-box">
+        <div class="eb-title">Permit</div>
+        <div class="eb-nums">
+          <div><div class="eb-num" style="color:#d97706;">52</div><div class="eb-sub">Expiring</div></div>
+          <div><div class="eb-num" style="color:#dc2626;">22</div><div class="eb-sub">Expired</div></div>
+        </div>
+      </div>
+      <div class="expiry-box">
+        <div class="eb-title">PUC</div>
+        <div class="eb-nums">
+          <div><div class="eb-num" style="color:#d97706;">61</div><div class="eb-sub">Expiring</div></div>
+          <div><div class="eb-num" style="color:#dc2626;">15</div><div class="eb-sub">Expired</div></div>
+        </div>
+      </div>
+      <div class="expiry-box">
+        <div class="eb-title">Driver DL</div>
+        <div class="eb-nums">
+          <div><div class="eb-num" style="color:#d97706;">18</div><div class="eb-sub">Expiring</div></div>
+          <div><div class="eb-num" style="color:#dc2626;">3</div><div class="eb-sub">Expired</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEHSIL TABLE + BAR CHART -->
+  <div class="two-col">
+    <div class="section-card" style="margin-bottom:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="section-title" style="margin-bottom:0;">Tehsil / Block Drilldown</div>
+        <span style="font-size:10.5px;font-weight:600;letter-spacing:0.06em;color:var(--text-secondary);">LUCKNOW DISTRICT</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tehsil</th>
+              <th>Schools</th>
+              <th>Buses</th>
+              <th>Compliant</th>
+              <th>Fitness %</th>
+              <th>GPS %</th>
+              <th>CCTV %</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="font-weight:500;">Sadar</td><td>145</td><td>320</td><td class="num-green">280</td><td class="num-green">92%</td><td class="num-orange">84%</td><td class="num-orange">78%</td></tr>
+            <tr><td style="font-weight:500;">Mohanlalganj</td><td>89</td><td>180</td><td class="num-orange">145</td><td class="num-green">85%</td><td class="num-red">72%</td><td class="num-orange">65%</td></tr>
+            <tr><td style="font-weight:500;">Malihabad</td><td>72</td><td>140</td><td class="num-orange">110</td><td class="num-orange">80%</td><td class="num-red">68%</td><td class="num-red">58%</td></tr>
+            <tr><td style="font-weight:500;">Bakshi Ka Talab</td><td>68</td><td>130</td><td class="num-orange">108</td><td class="num-green">88%</td><td class="num-orange">80%</td><td class="num-orange">72%</td></tr>
+            <tr><td style="font-weight:500;">Chinhat</td><td>95</td><td>210</td><td class="num-green">175</td><td class="num-orange">83%</td><td class="num-orange">75%</td><td class="num-orange">68%</td></tr>
+            <tr><td style="font-weight:500;">Kakori</td><td>55</td><td>98</td><td class="num-green">82</td><td class="num-green">90%</td><td class="num-orange">82%</td><td class="num-orange">76%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-card" style="margin-bottom:0;">
+      <div class="section-title">Block-wise Compliance (Multi-Parameter)</div>
+      <div style="height:220px;">
+        <canvas id="blockChart"></canvas>
+      </div>
+      <div style="display:flex;gap:14px;margin-top:10px;justify-content:center;">
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><span style="width:10px;height:10px;border-radius:2px;background:#1e40af;display:inline-block;"></span>Fitness</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><span style="width:10px;height:10px;border-radius:2px;background:#22c55e;display:inline-block;"></span>GPS</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><span style="width:10px;height:10px;border-radius:2px;background:#f59e0b;display:inline-block;"></span>CCTV</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUSES TABLE WITH TABS -->
+  <div class="section-card">
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-pending"     onclick="switchTab('pending')">Buses Pending Compliance</button>
+      <button class="tab-btn"        id="tab-violations"  onclick="switchTab('violations')">Buses with Violations</button>
+      <button class="tab-btn"        id="tab-inspections" onclick="switchTab('inspections')">Upcoming Inspections</button>
+    </div>
+
+    <!-- Buses Pending Compliance -->
+    <div id="tab-content-pending">
+      <table>
+        <thead>
+          <tr><th>Bus No.</th><th>School</th><th>Issue</th><th>Pending Days</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono" style="font-weight:600;">UP32 AB 1234</td>
+            <td>DPS Lucknow</td>
+            <td>Speed Governor Missing</td>
+            <td style="font-weight:600;">5 days</td>
+            <td><span class="status-pill pill-red"><span class="pill-dot"></span>Violation</span></td>
+            <td><button class="action-btn"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Issue Notice</button></td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-weight:600;">UP32 CD 5678</td>
+            <td>City Montessori</td>
+            <td>Fitness Expiring in 7 days</td>
+            <td style="font-weight:600;">7 days</td>
+            <td><span class="status-pill pill-orange"><span class="pill-dot"></span>Warning</span></td>
+            <td><button class="action-btn"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Issue Notice</button></td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-weight:600;">UP32 EF 9012</td>
+            <td>St. Francis</td>
+            <td>No CCTV Camera</td>
+            <td style="font-weight:600;">3 days</td>
+            <td><span class="status-pill pill-red"><span class="pill-dot"></span>Violation</span></td>
+            <td><button class="action-btn"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Issue Notice</button></td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-weight:600;">UP32 GH 3456</td>
+            <td>Army Public School</td>
+            <td>Insurance Expired</td>
+            <td style="font-weight:600;">10 days</td>
+            <td><span class="status-pill pill-red"><span class="pill-dot"></span>Violation</span></td>
+            <td><button class="action-btn"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Issue Notice</button></td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-weight:600;">UP32 IJ 7890</td>
+            <td>Modern Academy</td>
+            <td>GPS Not Working</td>
+            <td style="font-weight:600;">2 days</td>
+            <td><span class="status-pill pill-orange"><span class="pill-dot"></span>Warning</span></td>
+            <td><button class="action-btn"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Issue Notice</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Buses with Violations -->
+    <div id="tab-content-violations" style="display:none;">
+      <table>
+        <thead>
+          <tr><th>Bus No.</th><th>School</th><th>Violation Type</th><th>Date Detected</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono" style="font-weight:600;">UP32 AB 1234</td>
+            <td>DPS Lucknow</td>
+            <td>Speed Governor Missing</td>
+            <td>19 Mar 2026</td>
+            <td><span class="status-pill pill-red"><span class="pill-dot"></span>Violation</span></td>
+            <td><button class="action-btn">Issue Notice</button></td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-weight:600;">UP32 GH 3456</td>
+            <td>Army Public School</td>
+            <td>Insurance Expired</td>
+            <td>15 Mar 2026</td>
+            <td><span class="status-pill pill-red"><span class="pill-dot"></span>Violation</span></td>
+            <td><button class="action-btn">Issue Notice</button></td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-weight:600;">UP32 EF 9012</td>
+            <td>St. Francis</td>
+            <td>No CCTV Camera</td>
+            <td>12 Mar 2026</td>
+            <td><span class="status-pill pill-red"><span class="pill-dot"></span>Violation</span></td>
+            <td><button class="action-btn">Issue Notice</button></td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-weight:600;">UP32 LM 4455</td>
+            <td>Ryan International</td>
+            <td>No Fire Extinguisher</td>
+            <td>10 Mar 2026</td>
+            <td><span class="status-pill pill-orange"><span class="pill-dot"></span>Warning</span></td>
+            <td><button class="action-btn">Issue Notice</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Upcoming Inspections -->
+    <div id="tab-content-inspections" style="display:none;">
+      <table>
+        <thead>
+          <tr><th>Bus No.</th><th>School</th><th>Inspection Type</th><th>Scheduled Date</th><th>Inspector</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono" style="font-weight:600;">UP32 KL 1111</td>
+            <td>Loreto Convent</td>
+            <td>Annual Safety Check</td>
+            <td>22 Mar 2026</td>
+            <td>RTO Officer</td>
+            <td><span class="status-pill pill-blue"><span class="pill-dot"></span>Scheduled</span></td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-weight:600;">UP32 MN 2222</td>
+            <td>La Martiniere</td>
+            <td>Fitness Certificate</td>
+            <td>25 Mar 2026</td>
+            <td>ARTO Officer</td>
+            <td><span class="status-pill pill-blue"><span class="pill-dot"></span>Scheduled</span></td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-weight:600;">UP32 OP 3333</td>
+            <td>Kendriya Vidyalaya</td>
+            <td>GPS Verification</td>
+            <td>28 Mar 2026</td>
+            <td>Tech Inspector</td>
+            <td><span class="status-pill pill-green"><span class="pill-dot"></span>Confirmed</span></td>
+          </tr>
+          <tr>
+            <td class="mono" style="font-weight:600;">UP32 QR 4444</td>
+            <td>GD Goenka</td>
+            <td>CCTV Installation Check</td>
+            <td>31 Mar 2026</td>
+            <td>RTO Officer</td>
+            <td><span class="status-pill pill-blue"><span class="pill-dot"></span>Scheduled</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div class="section-card">
+    <div class="section-title">Quick Actions</div>
+    <div class="qa-grid">
+      <div class="qa-card">
+        <div class="qa-icon" style="background:#dbeafe;">
+          <svg width="15" height="15" fill="none" stroke="#1d4ed8" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div>
+          <div class="qa-title">Schedule Inspection</div>
+          <div class="qa-sub">Create new inspection schedule</div>
+        </div>
+      </div>
+      <div class="qa-card">
+        <div class="qa-icon" style="background:#fef3c7;">
+          <svg width="15" height="15" fill="none" stroke="#d97706" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div>
+          <div class="qa-title">Issue Notice</div>
+          <div class="qa-sub">Send compliance notice to school</div>
+        </div>
+      </div>
+      <div class="qa-card">
+        <div class="qa-icon" style="background:#dcfce7;">
+          <svg width="15" height="15" fill="none" stroke="#15803d" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        </div>
+        <div>
+          <div class="qa-title">View Reports</div>
+          <div class="qa-sub">District compliance reports</div>
+        </div>
+      </div>
+      <div class="qa-card">
+        <div class="qa-icon" style="background:#fee2e2;">
+          <svg width="15" height="15" fill="none" stroke="#dc2626" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <div class="qa-title">Manage Violations</div>
+          <div class="qa-sub">Track and resolve violations</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:20px;"></div>
+</div>
+
+<script>
+// ── BAR CHART ──
+new Chart(document.getElementById('blockChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['Sadar','Mohanlalganj','Malihabad','BKT','Chinhat','Kakori'],
+    datasets: [
+      { label: 'Fitness', data: [92,85,80,88,83,90], backgroundColor: '#1e40af', borderRadius: 3, barPercentage: 0.75 },
+      { label: 'GPS',     data: [84,72,68,80,75,82], backgroundColor: '#22c55e', borderRadius: 3, barPercentage: 0.75 },
+      { label: 'CCTV',   data: [78,65,58,72,68,76], backgroundColor: '#f59e0b', borderRadius: 3, barPercentage: 0.75 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        min: 50, max: 100,
+        grid: { color: '#f1f5f9' },
+        ticks: { font: { size: 10 }, color: '#94a3b8' }
+      },
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 10 }, color: '#94a3b8' }
+      }
+    }
+  }
+});
+
+// ── TAB SWITCHING ──
+function switchTab(tab) {
+  ['pending','violations','inspections'].forEach(t => {
+    document.getElementById('tab-content-' + t).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('tab-' + t);
+    btn.classList.toggle('active', t === tab);
+  });
+}
+</script>
+</body>
+</html>

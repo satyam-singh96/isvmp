@@ -1,0 +1,703 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISVMP — District Administration Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --main-bg: #f1f5f9;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --blue: #2563eb;
+    --green: #16a34a;
+    --red: #dc2626;
+    --orange: #d97706;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--main-bg);
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+
+  .content { padding: 22px 24px; }
+
+  /* ── PAGE HEADER ── */
+  .page-header { margin-bottom: 18px; }
+  .page-header h1 { font-size: 21px; font-weight: 700; }
+  .page-header p  { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* ── STAT CARDS ── */
+  .cards-row {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card.colored { border: none; }
+  .stat-card.blue-card   { background: #1e40af; }
+  .stat-card.green-card  { background: #15803d; }
+  .stat-card.red-card    { background: #b91c1c; }
+  .stat-card.dkred-card  { background: #991b1b; }
+  .stat-card.orange-card { background: #b45309; }
+
+  .card-label {
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--text-secondary); margin-bottom: 6px;
+  }
+  .stat-card.colored .card-label { color: rgba(255,255,255,0.75); }
+
+  .card-value { font-size: 22px; font-weight: 700; color: var(--text-primary); line-height: 1.1; }
+  .stat-card.colored .card-value { color: white; }
+
+  .card-sub { font-size: 10.5px; color: var(--text-secondary); margin-top: 3px; }
+  .stat-card.colored .card-sub { color: rgba(255,255,255,0.65); }
+
+  .card-icon {
+    position: absolute; right: 12px; top: 12px;
+    width: 28px; height: 28px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.06);
+  }
+  .stat-card.colored .card-icon { background: rgba(255,255,255,0.15); }
+
+  /* ── SECTION CARD ── */
+  .section-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: 13.5px; font-weight: 600;
+    color: var(--text-primary); margin-bottom: 14px;
+  }
+
+  /* ── TWO COL ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+
+  thead th {
+    padding: 9px 10px; text-align: left;
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--text-secondary); border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    color: var(--text-primary); white-space: nowrap;
+  }
+
+  tbody tr:hover td { background: #f8fafc; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .num-green  { color: #16a34a; font-weight: 500; }
+  .num-red    { color: #dc2626; font-weight: 500; }
+  .num-orange { color: #d97706; font-weight: 500; }
+
+  /* ── STATUS PILLS ── */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 12px;
+    font-size: 10.5px; font-weight: 600;
+  }
+  .pill-red     { background: #fee2e2; color: #b91c1c; }
+  .pill-orange  { background: #fef3c7; color: #92400e; }
+  .pill-green   { background: #dcfce7; color: #15803d; }
+  .pill-dot     { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar {
+    height: 6px; border-radius: 3px;
+    background: #e2e8f0; overflow: hidden;
+  }
+  .progress-fill { height: 100%; border-radius: 3px; }
+  .fill-green  { background: #22c55e; }
+  .fill-orange { background: #f59e0b; }
+  .fill-red    { background: #ef4444; }
+  .fill-blue   { background: #3b82f6; }
+
+  /* ── INSPECTION SUMMARY ── */
+  .insp-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 0; border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden; margin-bottom: 14px;
+  }
+  .insp-box {
+    padding: 14px 16px; text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .insp-box:last-child { border-right: none; }
+  .insp-num { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+  .insp-num.green  { color: #16a34a; }
+  .insp-num.orange { color: #d97706; }
+  .insp-num.red    { color: #dc2626; }
+  .insp-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* ── COMMITTEE BLOCK ── */
+  .comm-row {
+    display: flex; align-items: center; justify-content: space-between;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; margin-bottom: 10px;
+  }
+  .comm-row:last-child { margin-bottom: 0; }
+  .comm-title { font-size: 12.5px; font-weight: 600; }
+  .comm-sub   { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .comm-right { display: flex; align-items: center; gap: 12px; }
+  .comm-count { font-size: 13px; font-weight: 600; }
+
+  /* ── CRITICAL ISSUES ── */
+  .issue-card {
+    display: flex; align-items: center; justify-content: space-between;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 13px 16px; margin-bottom: 8px;
+    transition: background 0.15s;
+  }
+  .issue-card:last-child { margin-bottom: 0; }
+  .issue-card:hover { background: #fafafa; }
+  .issue-card.critical-bg { border-color: #fecaca; background: #fff5f5; }
+  .issue-card.warning-bg  { border-color: #fed7aa; background: #fffbeb; }
+  .issue-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .issue-desc { font-size: 11.5px; color: var(--text-secondary); margin-top: 3px; }
+
+  /* ── QUICK ACTIONS ── */
+  .qa-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  }
+  .qa-card {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; cursor: pointer;
+    transition: background 0.15s; background: white;
+  }
+  .qa-card:hover { background: #f8fafc; }
+  .qa-title { font-size: 13px; font-weight: 600; }
+  .qa-sub   { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+
+  .mono { font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  /* ══════════════════════════════════════════════════════════════════
+     RESPONSIVE DESIGN
+  ══════════════════════════════════════════════════════════════════ */
+  
+  /* ── TABLET (768px – 1024px) ── */
+  @media (max-width: 1024px) {
+    .content { padding: 18px 20px; }
+    
+    .page-header h1 { font-size: 18px; }
+    .page-header p { font-size: 11px; }
+    
+    .cards-row {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    
+    .stat-card { padding: 12px; }
+    .card-label { font-size: 10px; }
+    .card-value { font-size: 18px; }
+    .card-icon { width: 26px; height: 26px; }
+    .card-icon svg { width: 13px; height: 13px; }
+    
+    .insp-grid { grid-template-columns: repeat(2, 1fr); }
+    
+    .two-col {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    
+    .qa-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  
+  /* ── MOBILE (max-width: 767px) ── */
+  @media (max-width: 767px) {
+    .content { padding: 14px 12px; }
+    
+    .page-header { margin-bottom: 14px; }
+    .page-header h1 { font-size: 16px; }
+    .page-header p { font-size: 11px; }
+    
+    /* Stat cards - 2 columns */
+    .cards-row {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .stat-card {
+      padding: 10px;
+      border-radius: 8px;
+    }
+    
+    .card-label { font-size: 9px; }
+    .card-value { font-size: 16px; }
+    .card-sub { font-size: 10px; }
+    .card-icon { width: 24px; height: 24px; right: 9px; top: 10px; }
+    .card-icon svg { width: 12px; height: 12px; }
+    
+    /* Section cards */
+    .section-card {
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+    
+    .section-title {
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+    
+    /* Inspection grid - 2 columns */
+    .insp-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0;
+    }
+    
+    .insp-box {
+      padding: 10px 12px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .insp-box:nth-child(odd):nth-last-child(-n+2),
+    .insp-box:nth-child(even):nth-last-child(-n+1) { 
+      border-bottom: none; 
+    }
+    
+    .insp-box:nth-child(2n) { border-right: none; }
+    
+    .insp-num { font-size: 18px; }
+    .insp-label { font-size: 10px; }
+    
+    /* Committee rows adjustment */
+    .comm-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px 12px;
+    }
+    
+    .comm-title { font-size: 11px; }
+    .comm-sub { font-size: 10px; }
+    .comm-right { width: 100%; justify-content: space-between; }
+    
+    /* Table scrollable */
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: -12px -14px;
+      padding: 0 14px;
+    }
+    
+    table { font-size: 11px; }
+    thead th { font-size: 9px; padding: 7px 6px; }
+    tbody td { padding: 7px 6px; font-size: 11px; }
+    
+    /* Hide columns on mobile */
+    thead th:nth-child(n+5),
+    tbody td:nth-child(n+5) {
+      display: none;
+    }
+    
+    /* Issue cards - stacked */
+    .issue-card {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px 12px;
+    }
+    
+    .issue-name { font-size: 12px; }
+    .issue-desc { font-size: 10.5px; }
+    
+    /* Quick actions - 2 columns then 1 */
+    .qa-grid { grid-template-columns: 1fr; }
+    
+    .qa-card {
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .qa-card > div:first-child {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+      margin-bottom: 0 !important;
+    }
+    
+    .qa-title { font-size: 11px; }
+    .qa-sub { font-size: 10px; margin-top: 0; }
+    
+    /* Status pills adjust */
+    .status-pill {
+      padding: 2px 6px;
+      font-size: 9px;
+    }
+    
+    /* Progress bar adjustments */
+    .progress-bar { height: 5px; }
+  }
+  
+  /* ── EXTRA SMALL (max-width: 480px) ── */
+  @media (max-width: 480px) {
+    .content { padding: 12px 10px; }
+    
+    .page-header h1 { font-size: 14px; }
+    .page-header p { font-size: 10px; }
+    
+    .cards-row { grid-template-columns: 1fr; }
+    .card-value { font-size: 14px; }
+    .card-label { font-size: 8px; }
+    
+    .section-card { padding: 10px 12px; margin-bottom: 10px; }
+    .section-title { font-size: 11px; }
+    
+    .insp-grid { grid-template-columns: 1fr; }
+    .insp-box { border-right: none; border-bottom: 1px solid var(--border); }
+    .insp-box:last-child { border-bottom: none; }
+    .insp-num { font-size: 16px; }
+    
+    .comm-row { padding: 8px 10px; margin-bottom: 8px; }
+    .comm-title { font-size: 10px; }
+    .comm-sub { font-size: 9px; }
+    
+    .issue-card { padding: 8px 10px; }
+    .issue-name { font-size: 11px; }
+    .issue-desc { font-size: 10px; }
+    
+    .qa-card { padding: 8px 10px; gap: 10px; }
+    .qa-title { font-size: 10px; }
+    .qa-sub { font-size: 9px; }
+    
+    table { font-size: 10px; }
+    thead th { font-size: 8px; padding: 5px 4px; }
+    tbody td { padding: 5px 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="content">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <h1>District Administration Dashboard</h1>
+    <p>District Magistrate — Lucknow &bull; School Transport Safety Overview</p>
+  </div>
+
+  <!-- STAT CARDS -->
+  <div class="cards-row">
+    <div class="stat-card">
+      <div class="card-label">Total Schools</div>
+      <div class="card-value">524</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      </div>
+    </div>
+    <div class="stat-card colored blue-card">
+      <div class="card-label">Total Vehicles</div>
+      <div class="card-value">1,078</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      </div>
+    </div>
+    <div class="stat-card colored green-card">
+      <div class="card-label">Compliant</div>
+      <div class="card-value">900</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+    </div>
+    <div class="stat-card colored red-card">
+      <div class="card-label">Non-Compliant</div>
+      <div class="card-value">178</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+    </div>
+    <div class="stat-card colored green-card">
+      <div class="card-label">Drivers Verified</div>
+      <div class="card-value">941</div>
+      <div class="card-sub">87% verified</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="card-label">GPS Active</div>
+      <div class="card-value">832</div>
+      <div class="card-sub">77%</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="card-label">CCTV Installed</div>
+      <div class="card-value">745</div>
+      <div class="card-sub">69%</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+    </div>
+    <div class="stat-card colored dkred-card">
+      <div class="card-label">Active Violations</div>
+      <div class="card-value">67</div>
+      <div class="card-icon">
+        <svg width="14" height="14" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSPECTION SUMMARY + COMMITTEE STATUS -->
+  <div class="two-col">
+    <div class="section-card" style="margin-bottom:0;">
+      <div class="section-title">Inspection Summary</div>
+      <div class="insp-grid">
+        <div class="insp-box">
+          <div class="insp-num">320</div>
+          <div class="insp-label">Total Scheduled</div>
+        </div>
+        <div class="insp-box">
+          <div class="insp-num green">239</div>
+          <div class="insp-label">Completed</div>
+        </div>
+        <div class="insp-box">
+          <div class="insp-num green">210</div>
+          <div class="insp-label">Fit</div>
+        </div>
+        <div class="insp-box">
+          <div class="insp-num red">29</div>
+          <div class="insp-label">Unfit</div>
+        </div>
+      </div>
+      <div class="progress-bar" style="margin-bottom:8px;">
+        <div class="progress-fill fill-green" style="width:75%;"></div>
+      </div>
+      <div style="font-size:11.5px;color:var(--text-secondary);">75% inspections completed &bull; 81 pending</div>
+    </div>
+
+    <div class="section-card" style="margin-bottom:0;">
+      <div class="section-title">Committee Status (222E / 222G)</div>
+      <div class="comm-row">
+        <div>
+          <div class="comm-title">District Committee (222E)</div>
+          <div class="comm-sub">Last: 2026-01-15 &bull; Next: 2026-07-15</div>
+        </div>
+        <div class="comm-right">
+          <span class="status-pill pill-green"><span class="pill-dot"></span>Formed</span>
+        </div>
+      </div>
+      <div class="comm-row">
+        <div>
+          <div class="comm-title">School Committees (222G)</div>
+          <div style="margin-top:6px;margin-bottom:4px;">
+            <div class="progress-bar">
+              <div class="progress-fill fill-green" style="width:80%;"></div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text-secondary);">45 meetings overdue</div>
+        </div>
+        <div class="comm-right">
+          <span style="font-size:13px;font-weight:600;">420/524</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THANA TABLE + BAR CHART -->
+  <div class="two-col">
+    <div class="section-card" style="margin-bottom:0;">
+      <div class="section-title">Thana-wise Overview</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Thana</th>
+              <th>Schools</th>
+              <th>Vehicles</th>
+              <th>Compliant</th>
+              <th>Drivers ✓</th>
+              <th>GPS</th>
+              <th>CCTV</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="font-weight:500;">Sadar</td><td>45</td><td>120</td><td class="num-green">102</td><td>105/120</td><td class="num-green">95</td><td class="num-green">88</td></tr>
+            <tr><td style="font-weight:500;">Hazratganj</td><td>32</td><td>85</td><td class="num-green">72</td><td>78/85</td><td class="num-orange">70</td><td class="num-orange">62</td></tr>
+            <tr><td style="font-weight:500;">Gomti Nagar</td><td>55</td><td>150</td><td class="num-green">118</td><td>130/150</td><td class="num-orange">115</td><td class="num-orange">98</td></tr>
+            <tr><td style="font-weight:500;">Aliganj</td><td>28</td><td>68</td><td class="num-orange">58</td><td>60/68</td><td class="num-red">52</td><td class="num-red">45</td></tr>
+            <tr><td style="font-weight:500;">Chinhat</td><td>38</td><td>95</td><td class="num-orange">75</td><td>72/95</td><td class="num-orange">68</td><td class="num-red">55</td></tr>
+            <tr><td style="font-weight:500;">Cantonment</td><td>22</td><td>52</td><td class="num-green">48</td><td>50/52</td><td class="num-orange">48</td><td class="num-orange">42</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-card" style="margin-bottom:0;">
+      <div class="section-title">Block-wise Multi-Parameter Compliance</div>
+      <div style="height:220px;">
+        <canvas id="blockChart"></canvas>
+      </div>
+      <div style="display:flex;gap:14px;margin-top:10px;justify-content:center;">
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><span style="width:10px;height:10px;border-radius:2px;background:#1e40af;display:inline-block;"></span>Fitness</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><span style="width:10px;height:10px;border-radius:2px;background:#22c55e;display:inline-block;"></span>GPS</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><span style="width:10px;height:10px;border-radius:2px;background:#f59e0b;display:inline-block;"></span>CCTV</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><span style="width:10px;height:10px;border-radius:2px;background:#8b5cf6;display:inline-block;"></span>Drivers</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CRITICAL ISSUES -->
+  <div class="section-card">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:14px;">
+      <svg width="15" height="15" fill="none" stroke="#d97706" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span class="section-title" style="margin-bottom:0;">Critical Issues Requiring Attention</span>
+    </div>
+
+    <div class="issue-card critical-bg">
+      <div>
+        <div class="issue-name">City Montessori</div>
+        <div class="issue-desc">8 buses non-compliant — 3 expired fitness, 2 no GPS, 3 no CCTV &bull; Gomti Nagar</div>
+      </div>
+      <span class="status-pill pill-red"><span class="pill-dot"></span>Critical</span>
+    </div>
+
+    <div class="issue-card critical-bg">
+      <div>
+        <div class="issue-name">Ryan International</div>
+        <div class="issue-desc">3 buses expired fitness, 1 driver DL expired &bull; Chinhat</div>
+      </div>
+      <span class="status-pill pill-red"><span class="pill-dot"></span>Critical</span>
+    </div>
+
+    <div class="issue-card warning-bg">
+      <div>
+        <div class="issue-name">St. Francis College</div>
+        <div class="issue-desc">Driver police verification pending for 4 drivers &bull; Sadar</div>
+      </div>
+      <span class="status-pill pill-orange"><span class="pill-dot"></span>Warning</span>
+    </div>
+
+    <div class="issue-card warning-bg">
+      <div>
+        <div class="issue-name">Modern Public School</div>
+        <div class="issue-desc">GPS non-functional on 2 buses, speed governor issue on 1 &bull; Aliganj</div>
+      </div>
+      <span class="status-pill pill-orange"><span class="pill-dot"></span>Warning</span>
+    </div>
+
+    <div class="issue-card critical-bg">
+      <div>
+        <div class="issue-name">Public Inter College</div>
+        <div class="issue-desc">Insurance expired for 2 vehicles, no fire extinguisher on 1 &bull; Hazratganj</div>
+      </div>
+      <span class="status-pill pill-red"><span class="pill-dot"></span>Critical</span>
+    </div>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div class="section-card">
+    <div class="section-title">Quick Actions</div>
+    <div class="qa-grid">
+      <div class="qa-card">
+        <div style="width:32px;height:32px;background:#dbeafe;border-radius:7px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;">
+          <svg width="15" height="15" fill="none" stroke="#1d4ed8" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/></svg>
+        </div>
+        <div class="qa-title">Transport Report</div>
+        <div class="qa-sub">District transport compliance</div>
+      </div>
+      <div class="qa-card">
+        <div style="width:32px;height:32px;background:#dcfce7;border-radius:7px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;">
+          <svg width="15" height="15" fill="none" stroke="#15803d" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        </div>
+        <div class="qa-title">BSA Dashboard</div>
+        <div class="qa-sub">Education dept. compliance</div>
+      </div>
+      <div class="qa-card">
+        <div style="width:32px;height:32px;background:#fef3c7;border-radius:7px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;">
+          <svg width="15" height="15" fill="none" stroke="#d97706" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <div class="qa-title">Committee Status</div>
+        <div class="qa-sub">222E / 222G committees</div>
+      </div>
+      <div class="qa-card">
+        <div style="width:32px;height:32px;background:#ede9fe;border-radius:7px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;">
+          <svg width="15" height="15" fill="none" stroke="#7c3aed" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        </div>
+        <div class="qa-title">Form Submissions</div>
+        <div class="qa-sub">Permit applications status</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:20px;"></div>
+</div>
+
+<script>
+new Chart(document.getElementById('blockChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['Sadar','Mohanlalganj','Malihabad','BKT','Chinhat','Kakori'],
+    datasets: [
+      { label: 'Fitness', data: [92, 85, 80, 88, 83, 90], backgroundColor: '#1e40af', borderRadius: 3, barPercentage: 0.8 },
+      { label: 'GPS',     data: [88, 72, 65, 80, 68, 85], backgroundColor: '#22c55e', borderRadius: 3, barPercentage: 0.8 },
+      { label: 'CCTV',   data: [78, 65, 58, 72, 55, 76], backgroundColor: '#f59e0b', borderRadius: 3, barPercentage: 0.8 },
+      { label: 'Drivers',data: [95, 80, 75, 85, 78, 92], backgroundColor: '#8b5cf6', borderRadius: 3, barPercentage: 0.8 }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        min: 40, max: 100,
+        grid: { color: '#f1f5f9' },
+        ticks: { font: { size: 10 }, color: '#94a3b8' }
+      },
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 10 }, color: '#94a3b8' }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

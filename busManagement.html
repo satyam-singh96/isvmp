@@ -1,0 +1,422 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bus Management – ISVMP</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#f4f6f9;color:#1a2332;padding:24px 28px;min-height:100vh}
+
+/* ── HEADER ── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;margin-bottom:22px}
+.page-header h1{font-size:22px;font-weight:700;color:#1a2332}
+.page-header p{font-size:12.5px;color:#6b7a90;margin-top:3px}
+.btn-primary{background:#1e3a5f;color:#fff;border:none;border-radius:9px;
+  padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;
+  font-family:inherit;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:.15s}
+.btn-primary:hover{background:#2563a8}
+
+/* ── STAT CARDS ── */
+.stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-card{border-radius:12px;padding:20px 18px;position:relative;overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.stat-card.blue  {background:linear-gradient(135deg,#1e3a5f,#2563a8);color:#fff}
+.stat-card.green {background:linear-gradient(135deg,#1a7a4a,#2da862);color:#fff}
+.stat-card.red   {background:linear-gradient(135deg,#991b1b,#dc2626);color:#fff}
+.stat-card.amber {background:linear-gradient(135deg,#b45309,#f59e0b);color:#fff}
+.s-label{font-size:10.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;
+  opacity:.82;margin-bottom:9px;line-height:1.3}
+.s-val{font-size:32px;font-weight:700;line-height:1}
+.s-icon{position:absolute;top:14px;right:14px;font-size:22px;opacity:.2}
+
+/* ── SECTION CARD ── */
+.section-card{background:#fff;border-radius:13px;padding:22px 24px;
+  box-shadow:0 1px 4px rgba(0,0,0,.06)}
+
+/* ── TOOLBAR ── */
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.toolbar-left{font-size:15px;font-weight:600;color:#1a2332}
+.toolbar-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.search-input{
+  border:1px solid #dde3ec;border-radius:8px;padding:7px 12px 7px 32px;
+  font-size:13px;color:#1a2332;outline:none;font-family:inherit;
+  background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24'%3E%3Cpath d='M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z' stroke='%236b7a90' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 10px center;
+  width:200px}
+.filter-select{
+  border:1px solid #dde3ec;border-radius:8px;padding:7px 28px 7px 11px;
+  font-size:13px;color:#1a2332;outline:none;background:#f8fafc;
+  appearance:none;cursor:pointer;font-family:inherit;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%236b7a90' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:680px}
+thead th{font-size:10.5px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
+  color:#8fa0b4;text-align:left;padding:9px 12px;border-bottom:1px solid #f0f3f7;white-space:nowrap}
+tbody tr{border-bottom:1px solid #f4f6f9;cursor:pointer;transition:background .15s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f8fafc}
+tbody td{padding:13px 12px;font-size:13px;color:#1a2332;vertical-align:middle}
+
+.v-no{font-family:monospace;font-size:12px;font-weight:700;color:#1e3a5f}
+.expired-date{color:#e74c3c;font-weight:600}
+.date-ok{color:#1a2332}
+.date-near{color:#e67e22;font-weight:600}
+
+/* score */
+.score-wrap{display:flex;align-items:center;gap:7px}
+.score-bar-bg{width:50px;height:5px;background:#e8ecf1;border-radius:3px;overflow:hidden;flex-shrink:0}
+.score-bar-fill{height:100%;border-radius:3px}
+.score-txt{font-size:12px;font-weight:600;min-width:28px}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;
+  border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-dot{width:6px;height:6px;border-radius:50%}
+.badge.compliant{background:#e8f9ef;color:#1a7a4a}.badge.compliant .badge-dot{background:#2da862}
+.badge.warning  {background:#fef3e2;color:#a05a00}.badge.warning   .badge-dot{background:#e67e22}
+.badge.violation{background:#fdecea;color:#c0392b}.badge.violation .badge-dot{background:#e74c3c}
+.badge.pending  {background:#fff3cd;color:#856404}.badge.pending   .badge-dot{background:#ffc107}
+
+/* pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid #f0f3f7}
+.page-info{font-size:12px;color:#8fa0b4}
+.page-btns{display:flex;gap:4px}
+.page-btn{border:1px solid #dde3ec;background:#fff;border-radius:6px;
+  width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;cursor:pointer;color:#1a2332;font-family:inherit;transition:.15s}
+.page-btn:hover{background:#f4f6f9}
+.page-btn.active{background:#1e3a5f;color:#fff;border-color:#1e3a5f}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);
+  z-index:100;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:600px;
+  max-height:92vh;overflow-y:auto;padding:26px;box-shadow:0 10px 40px rgba(0,0,0,.18)}
+.modal-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.modal-header h2{font-size:17px;font-weight:700;font-family:monospace}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#6b7a90;line-height:1;padding:0}
+.modal-section{margin-bottom:18px}
+.modal-section-title{font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
+  color:#8fa0b4;margin-bottom:10px}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-item{background:#f8fafc;border-radius:8px;padding:11px 13px}
+.modal-item .m-label{font-size:10px;color:#8fa0b4;font-weight:600;text-transform:uppercase;
+  letter-spacing:.4px;margin-bottom:3px}
+.modal-item .m-val{font-size:13px;font-weight:600;color:#1a2332}
+.modal-item .m-val.ok{color:#2da862}
+.modal-item .m-val.warn{color:#e67e22}
+.modal-item .m-val.bad{color:#e74c3c}
+
+/* equipment row */
+.eq-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.eq-item{display:flex;align-items:center;gap:7px;padding:9px 11px;
+  border-radius:8px;border:1px solid #e8ecf1;font-size:12px;font-weight:500}
+.eq-item.ok-eq{border-color:#c6f0d8;background:#f0faf4;color:#1a7a4a}
+.eq-item.fail-eq{border-color:#fcc;background:#fff5f5;color:#c0392b}
+.eq-icon{font-size:14px}
+
+/* action btns */
+.modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.btn-sm{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;
+  cursor:pointer;border:none;font-family:inherit;transition:.15s}
+.btn-sm.primary{background:#1e3a5f;color:#fff}
+.btn-sm.primary:hover{background:#2563a8}
+.btn-sm.outline{background:#fff;border:1px solid #dde3ec;color:#1a2332}
+.btn-sm.outline:hover{background:#f4f6f9}
+.btn-sm.danger{background:#fdecea;color:#c0392b;border:1px solid #fcc}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){.stat-cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){
+  body{padding:14px}
+  .stat-cards{grid-template-columns:repeat(2,1fr)}
+  .s-val{font-size:24px}
+  .section-card{padding:14px}
+  .search-input{width:100%}
+  .toolbar-right{width:100%}
+  .search-input,.filter-select{flex:1}
+  .page-header h1{font-size:18px}
+  .modal-grid{grid-template-columns:1fr}
+  .eq-grid{grid-template-columns:repeat(2,1fr)}
+  .modal{padding:18px}
+}
+@media(max-width:380px){
+  .stat-cards{grid-template-columns:1fr 1fr}
+  .eq-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="page-header">
+  <div>
+    <h1>Bus Management</h1>
+    <p>Manage and monitor all registered school buses</p>
+  </div>
+  <button class="btn-primary" onclick="alert('Register Bus form coming soon!')">＋ Register Bus</button>
+</div>
+
+<!-- ── STAT CARDS ── -->
+<div class="stat-cards">
+  <div class="stat-card blue">
+    <div class="s-label">Total Buses</div>
+    <div class="s-val">42,891</div>
+    <div class="s-icon">🚌</div>
+  </div>
+  <div class="stat-card green">
+    <div class="s-label">Compliant</div>
+    <div class="s-val">34,712</div>
+    <div class="s-icon">🛡️</div>
+  </div>
+  <div class="stat-card red">
+    <div class="s-label">Non-Compliant</div>
+    <div class="s-val">8,179</div>
+    <div class="s-icon">⚠️</div>
+  </div>
+  <div class="stat-card amber">
+    <div class="s-label">Pending Inspection</div>
+    <div class="s-val">3,241</div>
+    <div class="s-icon">📋</div>
+  </div>
+</div>
+
+<!-- ── TABLE ── -->
+<div class="section-card">
+  <div class="table-toolbar">
+    <div class="toolbar-left">All Registered Buses</div>
+    <div class="toolbar-right">
+      <input class="search-input" type="text" placeholder="Search buses..." id="busSearch" oninput="filterBuses()"/>
+      <select class="filter-select" id="statusFilter" onchange="filterBuses()">
+        <option value="">All Status</option>
+        <option value="Compliant">Compliant</option>
+        <option value="Warning">Warning</option>
+        <option value="Violation">Violation</option>
+      </select>
+      <select class="filter-select" id="typeFilter" onchange="filterBuses()">
+        <option value="">All Types</option>
+        <option value="Standard">Standard</option>
+        <option value="Mini Bus">Mini Bus</option>
+        <option value="AC Bus">AC Bus</option>
+        <option value="Van">Van</option>
+      </select>
+      <select class="filter-select" id="districtFilter" onchange="filterBuses()">
+        <option value="">All Districts</option>
+        <option value="Lucknow">Lucknow</option>
+        <option value="Kanpur">Kanpur</option>
+        <option value="Agra">Agra</option>
+        <option value="Varanasi">Varanasi</option>
+        <option value="Prayagraj">Prayagraj</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Vehicle No.</th>
+          <th>Type</th>
+          <th>School</th>
+          <th>District</th>
+          <th>Fitness Expiry</th>
+          <th>Compliance</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="busTbody"></tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <div class="page-info" id="pageInfo">Showing 1–10 of 42,891 buses</div>
+    <div class="page-btns">
+      <button class="page-btn">‹</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <button class="page-btn">…</button>
+      <button class="page-btn">4289</button>
+      <button class="page-btn">›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── BUS DETAIL MODAL ── -->
+<div class="modal-overlay" id="busModal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalVehicle">UP32 AB 1234</h2>
+        <div id="modalBadge" style="margin-top:6px"></div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('busModal').classList.remove('open')">✕</button>
+    </div>
+
+    <!-- Basic Info -->
+    <div class="modal-section">
+      <div class="modal-section-title">Vehicle Information</div>
+      <div class="modal-grid" id="modalBasic"></div>
+    </div>
+
+    <!-- Equipment Status -->
+    <div class="modal-section">
+      <div class="modal-section-title">Safety Equipment Status</div>
+      <div class="eq-grid" id="modalEquipment"></div>
+    </div>
+
+    <!-- Documents -->
+    <div class="modal-section">
+      <div class="modal-section-title">Documents & Expiry</div>
+      <div class="modal-grid" id="modalDocs"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-sm primary">View Full Details</button>
+      <button class="btn-sm outline">Request Inspection</button>
+      <button class="btn-sm danger">Flag Violation</button>
+      <button class="btn-sm outline" onclick="document.getElementById('busModal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const buses = [
+  { vno:'UP32 AB 1234', type:'Standard',  school:'DPS Lucknow',        district:'Lucknow',   fitness:'2026-08-15', score:92, status:'Compliant',
+    driver:'Ramesh Kumar', ownership:'School Owned', gps:true,  cctv:true,  gov:true,  fire:true,  aid:true,  insurance:'2027-03-20', permit:'2027-08-10', capacity:40 },
+  { vno:'UP78 CD 5678', type:'Mini Bus',  school:'City Montessori',     district:'Kanpur',    fitness:'2026-03-20', score:65, status:'Warning',
+    driver:'Sunil Yadav',  ownership:'Affiliated',   gps:true,  cctv:false, gov:true,  fire:true,  aid:true,  insurance:'2026-06-15', permit:'2026-12-01', capacity:20 },
+  { vno:'UP65 EF 9012', type:'Standard',  school:"St. Xavier's",        district:'Agra',      fitness:'2025-12-01', score:38, status:'Violation',
+    driver:'Amit Singh',   ownership:'Affiliated',   gps:false, cctv:false, gov:false, fire:false, aid:true,  insurance:'2026-02-15', permit:'2025-12-30', capacity:35 },
+  { vno:'UP54 GH 3456', type:'AC Bus',    school:'Army Public School',  district:'Varanasi',  fitness:'2026-11-30', score:88, status:'Compliant',
+    driver:'Rajesh Tiwari',ownership:'School Owned', gps:true,  cctv:true,  gov:true,  fire:true,  aid:true,  insurance:'2027-09-10', permit:'2027-06-15', capacity:50 },
+  { vno:'UP70 IJ 7890', type:'Standard',  school:'Delhi Public School', district:'Prayagraj', fitness:'2026-06-15', score:72, status:'Warning',
+    driver:'Vikram Sharma',ownership:'School Owned', gps:true,  cctv:true,  gov:false, fire:true,  aid:true,  insurance:'2027-01-15', permit:'2027-04-20', capacity:40 },
+  { vno:'UP32 KL 2345', type:'Mini Bus',  school:'GD Goenka',           district:'Lucknow',   fitness:'2026-03-25', score:95, status:'Compliant',
+    driver:'Mohd. Ali',    ownership:'School Owned', gps:true,  cctv:true,  gov:true,  fire:true,  aid:true,  insurance:'2027-05-10', permit:'2027-09-20', capacity:22 },
+  { vno:'UP78 MN 6789', type:'Standard',  school:'Ryan International',  district:'Kanpur',    fitness:'2026-09-10', score:45, status:'Violation',
+    driver:'Deepak Singh', ownership:'Affiliated',   gps:false, cctv:false, gov:true,  fire:true,  aid:false, insurance:'2026-04-01', permit:'2026-07-15', capacity:38 },
+  { vno:'UP65 OP 1357', type:'AC Bus',    school:'Kendriya Vidyalaya',  district:'Agra',      fitness:'2027-01-15', score:98, status:'Compliant',
+    driver:'R.K. Sharma',  ownership:'School Owned', gps:true,  cctv:true,  gov:true,  fire:true,  aid:true,  insurance:'2028-01-10', permit:'2028-03-05', capacity:52 },
+  { vno:'UP32 QR 4680', type:'Van',       school:'Sunbeam School',      district:'Varanasi',  fitness:'2026-05-20', score:76, status:'Warning',
+    driver:'S. Verma',     ownership:'Guardian-Owned',gps:true, cctv:false, gov:true,  fire:true,  aid:true,  insurance:'2026-11-25', permit:'2027-01-18', capacity:12 },
+  { vno:'UP54 ST 9753', type:'Mini Bus',  school:'Modern Academy',      district:'Lucknow',   fitness:'2026-12-08', score:84, status:'Compliant',
+    driver:'P. Tiwari',    ownership:'School Owned', gps:true,  cctv:true,  gov:true,  fire:true,  aid:true,  insurance:'2027-07-30', permit:'2027-10-22', capacity:24 },
+];
+
+let filtered = [...buses];
+const today = new Date('2026-03-20');
+
+function isExpired(d){ return new Date(d) < today; }
+function isNear(d){ const diff=(new Date(d)-today)/(1000*60*60*24); return diff>=0&&diff<=90; }
+function dateClass(d){ return isExpired(d)?'bad':isNear(d)?'warn':''; }
+
+function badgeHTML(s){
+  const c=s==='Compliant'?'compliant':s==='Warning'?'warning':'violation';
+  return `<span class="badge ${c}"><span class="badge-dot"></span>${s}</span>`;
+}
+function scoreHTML(score){
+  const c=score>=80?'#2da862':score>=60?'#e67e22':'#e74c3c';
+  return `<div class="score-wrap">
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:${score}%;background:${c}"></div></div>
+    <span class="score-txt" style="color:${c}">${score}%</span></div>`;
+}
+function fitnessCell(d){
+  if(isExpired(d)) return `<span class="expired-date">${d}</span>`;
+  if(isNear(d))    return `<span class="date-near">${d}</span>`;
+  return `<span class="date-ok">${d}</span>`;
+}
+
+function renderTable(){
+  const tb=document.getElementById('busTbody');
+  tb.innerHTML=filtered.map((b,i)=>`
+    <tr onclick="openModal(${i})">
+      <td class="v-no">${b.vno}</td>
+      <td>${b.type}</td>
+      <td>${b.school}</td>
+      <td>${b.district}</td>
+      <td>${fitnessCell(b.fitness)}</td>
+      <td>${scoreHTML(b.score)}</td>
+      <td>${badgeHTML(b.status)}</td>
+    </tr>`).join('');
+  document.getElementById('pageInfo').textContent=
+    `Showing 1–${filtered.length} of 42,891 buses`;
+}
+
+function filterBuses(){
+  const q=document.getElementById('busSearch').value.toLowerCase();
+  const st=document.getElementById('statusFilter').value;
+  const ty=document.getElementById('typeFilter').value;
+  const di=document.getElementById('districtFilter').value;
+  filtered=buses.filter(b=>{
+    const mq=!q||b.vno.toLowerCase().includes(q)||b.school.toLowerCase().includes(q);
+    const ms=!st||b.status===st;
+    const mt=!ty||b.type===ty;
+    const md=!di||b.district===di;
+    return mq&&ms&&mt&&md;
+  });
+  renderTable();
+}
+
+function openModal(i){
+  const b=filtered[i];
+  document.getElementById('modalVehicle').textContent=b.vno;
+  document.getElementById('modalBadge').innerHTML=badgeHTML(b.status);
+
+  // Basic info
+  document.getElementById('modalBasic').innerHTML=`
+    <div class="modal-item"><div class="m-label">Type</div><div class="m-val">${b.type}</div></div>
+    <div class="modal-item"><div class="m-label">School</div><div class="m-val">${b.school}</div></div>
+    <div class="modal-item"><div class="m-label">District</div><div class="m-val">${b.district}</div></div>
+    <div class="modal-item"><div class="m-label">Ownership</div><div class="m-val">${b.ownership}</div></div>
+    <div class="modal-item"><div class="m-label">Driver</div><div class="m-val">${b.driver}</div></div>
+    <div class="modal-item"><div class="m-label">Capacity</div><div class="m-val">${b.capacity} seats</div></div>
+    <div class="modal-item"><div class="m-label">Compliance Score</div>
+      <div class="m-val ${b.score>=80?'ok':b.score>=60?'warn':'bad'}">${b.score}%</div></div>
+    <div class="modal-item"><div class="m-label">Fitness Expiry</div>
+      <div class="m-val ${dateClass(b.fitness)}">${b.fitness}</div></div>`;
+
+  // Equipment
+  const eq=[
+    {label:'GPS',      icon:'📡', ok:b.gps},
+    {label:'CCTV',     icon:'📷', ok:b.cctv},
+    {label:'Speed Gov',icon:'⚡', ok:b.gov},
+    {label:'Fire Ext', icon:'🧯', ok:b.fire},
+    {label:'First Aid',icon:'🩺', ok:b.aid},
+  ];
+  document.getElementById('modalEquipment').innerHTML=eq.map(e=>
+    `<div class="eq-item ${e.ok?'ok-eq':'fail-eq'}">
+      <span class="eq-icon">${e.icon}</span>
+      <span>${e.label}: ${e.ok?'✓ OK':'✗ Missing'}</span>
+    </div>`).join('');
+
+  // Documents
+  document.getElementById('modalDocs').innerHTML=`
+    <div class="modal-item"><div class="m-label">Insurance Expiry</div>
+      <div class="m-val ${dateClass(b.insurance)}">${b.insurance}</div></div>
+    <div class="modal-item"><div class="m-label">Permit Expiry</div>
+      <div class="m-val ${dateClass(b.permit)}">${b.permit}</div></div>
+    <div class="modal-item"><div class="m-label">Fitness Certificate</div>
+      <div class="m-val ${dateClass(b.fitness)}">${b.fitness}</div></div>
+    <div class="modal-item"><div class="m-label">VAHAN Status</div>
+      <div class="m-val ok">✓ Registered</div></div>`;
+
+  document.getElementById('busModal').classList.add('open');
+}
+
+function closeModal(e){
+  if(e.target.id==='busModal') document.getElementById('busModal').classList.remove('open');
+}
+
+renderTable();
+</script>
+</body>
+</html>

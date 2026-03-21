@@ -1,0 +1,614 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Reports & Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --body-bg: #f8fafc;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --green: #15803d;
+    --orange: #d97706;
+    --red: #dc2626;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--body-bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 28px 28px 56px;
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    flex-wrap: wrap; gap: 14px; margin-bottom: 24px;
+  }
+  .page-title { font-size: 22px; font-weight: 800; margin-bottom: 3px; }
+  .page-sub   { font-size: 13px; color: var(--text-secondary); }
+  .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .district-select-btn {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 14px;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    color: var(--text-primary); font-family: 'DM Sans', sans-serif;
+  }
+  .btn-print {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 14px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    color: var(--text-primary); font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s;
+  }
+  .btn-print:hover { background: var(--body-bg); }
+
+  /* STAT CARDS */
+  .stat-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px; margin-bottom: 24px;
+  }
+  .stat-card {
+    border-radius: var(--radius); padding: 20px 20px 18px;
+    display: flex; flex-direction: column; gap: 5px;
+    position: relative; overflow: hidden; min-width: 0;
+  }
+  .stat-card.rep-gen  { background: #1e3a5f; color: #fff; }
+  .stat-card.downloads{ background: var(--card-bg); border: 1px solid var(--border); }
+  .stat-card.avg-comp { background: #15803d; color: #fff; }
+  .stat-card.sched    { background: #d97706; color: #fff; }
+
+  .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; opacity: 0.8; }
+  .stat-card.downloads .stat-label { color: var(--text-secondary); opacity: 1; }
+  .stat-value { font-size: 32px; font-weight: 800; line-height: 1.1; }
+  .stat-card.downloads .stat-value { color: var(--text-primary); }
+  .stat-sub   { font-size: 11px; opacity: 0.8; margin-top: 1px; }
+  .stat-card.downloads .stat-sub { color: var(--text-secondary); opacity: 1; }
+  .stat-growth { font-size: 11px; font-weight: 600; color: #4ade80; display: flex; align-items: center; gap: 3px; }
+  .stat-icon {
+    position: absolute; right: 14px; top: 16px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .stat-card.downloads .stat-icon { background: #f1f5f9; }
+
+  /* CHARTS ROW */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px; margin-bottom: 20px;
+  }
+  .chart-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .chart-header { margin-bottom: 16px; }
+  .chart-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .chart-sub   { font-size: 12px; color: var(--text-secondary); }
+  .chart-wrap  { position: relative; }
+
+  /* Trend legend */
+  .trend-legend {
+    display: flex; align-items: center; gap: 14px;
+    flex-wrap: wrap; margin-top: 10px; font-size: 11px; font-weight: 500;
+  }
+  .tl-item { display: flex; align-items: center; gap: 5px; color: var(--text-secondary); }
+  .tl-dot  { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* BOTTOM 3-GRID */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px; margin-bottom: 24px;
+  }
+
+  /* Inspection Performance */
+  .insp-chart-wrap { position: relative; }
+
+  /* Violation Donut */
+  .donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .donut-canvas { max-width: 200px; }
+  .donut-legend {
+    display: flex; flex-wrap: wrap; gap: 8px 16px;
+    justify-content: center; font-size: 12px;
+  }
+  .dl-item { display: flex; align-items: center; gap: 5px; font-weight: 500; }
+  .dl-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Scheduled Reports */
+  .sched-list { display: flex; flex-direction: column; gap: 10px; }
+  .sched-item {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 10px; padding: 12px 14px;
+    background: var(--body-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .sched-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .sched-sub  { font-size: 11px; color: var(--text-secondary); }
+  .sched-badge {
+    background: #dbeafe; color: #1d4ed8;
+    padding: 3px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .sched-icon { color: var(--orange); flex-shrink: 0; }
+
+  /* REPORT LIBRARY */
+  .library-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 14px;
+  }
+  .library-title-block .section-title { font-size: 16px; font-weight: 800; margin-bottom: 2px; }
+  .library-title-block .section-sub   { font-size: 12px; color: var(--text-secondary); }
+  .search-reports {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; min-width: 200px;
+  }
+  .search-reports input {
+    border: none; background: none; outline: none;
+    font-size: 13px; color: var(--text-primary); width: 100%;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* Filter tabs */
+  .filter-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .ftab {
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--border);
+    background: var(--card-bg); color: var(--text-secondary);
+    transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+  }
+  .ftab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .ftab:hover:not(.active) { background: var(--body-bg); }
+
+  /* Report List */
+  .report-list { display: flex; flex-direction: column; gap: 0; }
+  .report-item {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; padding: 14px 20px;
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 0; border-top: none;
+    transition: background 0.1s;
+  }
+  .report-item:first-child { border-top: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; }
+  .report-item:last-child  { border-radius: 0 0 var(--radius) var(--radius); }
+  .report-item:only-child  { border-radius: var(--radius); }
+  .report-item:hover { background: #f8fafc; }
+
+  .report-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: #f1f5f9; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--text-secondary);
+  }
+  .report-info { flex: 1; min-width: 0; }
+  .report-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .report-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  .rbadge {
+    padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  }
+  .rb-compliance  { background: #dbeafe; color: #1d4ed8; }
+  .rb-inspection  { background: #dcfce7; color: #15803d; }
+  .rb-violation   { background: #fee2e2; color: #b91c1c; }
+  .rb-summary     { background: #f3e8ff; color: #7c3aed; }
+  .rb-doc-expiry  { background: #fef3c7; color: #92400e; }
+  .rb-vendor      { background: #e0f2fe; color: #0369a1; }
+  .rb-safety      { background: #fdf4ff; color: #86198f; }
+  .rb-driver      { background: #fff7ed; color: #c2410c; }
+  .rb-committee   { background: #f0fdf4; color: #166534; }
+
+  .report-level { font-size: 11px; color: var(--text-secondary); }
+  .report-date  { font-size: 11px; color: var(--text-muted); }
+  .report-dl    { font-size: 11px; color: var(--text-muted); }
+
+  .report-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .dl-btn {
+    display: flex; align-items: center; gap: 4px;
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 10px; font-size: 12px; font-weight: 500;
+    background: #fff; cursor: pointer; color: var(--text-primary);
+    transition: background 0.12s; font-family: 'DM Sans', sans-serif;
+  }
+  .dl-btn:hover { background: var(--body-bg); }
+  .dl-btn.csv { color: var(--text-secondary); }
+
+  /* RESPONSIVE */
+  @media (max-width: 1100px) {
+    .stat-cards  { grid-template-columns: repeat(2, 1fr); }
+    .bottom-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 780px) {
+    body { padding: 16px 16px 40px; }
+    .page-title { font-size: 18px; }
+    .charts-row  { grid-template-columns: 1fr; }
+    .bottom-grid { grid-template-columns: 1fr; }
+    .stat-cards  { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-value  { font-size: 26px; }
+    .report-item { flex-wrap: wrap; }
+    .report-actions { width: 100%; justify-content: flex-end; }
+  }
+  @media (max-width: 480px) {
+    .stat-cards { grid-template-columns: 1fr 1fr; }
+    .page-header { flex-direction: column; }
+    .header-actions { width: 100%; justify-content: flex-end; }
+    .report-name { white-space: normal; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div>
+    <div class="page-title">Reports &amp; Analytics</div>
+    <div class="page-sub">School, Block, Thana, District &amp; State level reports with trend analysis</div>
+  </div>
+  <div class="header-actions">
+    <select class="district-select-btn">
+      <option>All Districts</option>
+      <option>Lucknow</option><option>Kanpur</option><option>Agra</option>
+      <option>Varanasi</option><option>Meerut</option><option>Prayagraj</option>
+    </select>
+    <button class="btn-print" onclick="window.print()">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print
+    </button>
+  </div>
+</div>
+
+<!-- STAT CARDS -->
+<div class="stat-cards">
+  <div class="stat-card rep-gen">
+    <div class="stat-label">Reports Generated</div>
+    <div class="stat-value">1,247</div>
+    <div class="stat-growth">↑ 12.5% this month</div>
+    <div class="stat-icon">
+      <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+  </div>
+  <div class="stat-card downloads">
+    <div class="stat-label">Downloads</div>
+    <div class="stat-value">3,892</div>
+    <div class="stat-sub">Last 30 days</div>
+    <div class="stat-icon">
+      <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </div>
+  </div>
+  <div class="stat-card avg-comp">
+    <div class="stat-label">Avg Compliance</div>
+    <div class="stat-value">81%</div>
+    <div class="stat-sub">State average</div>
+    <div class="stat-icon">
+      <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+    </div>
+  </div>
+  <div class="stat-card sched">
+    <div class="stat-label">Scheduled Reports</div>
+    <div class="stat-value">4</div>
+    <div class="stat-sub">Auto-generated</div>
+    <div class="stat-icon">
+      <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- CHARTS ROW -->
+<div class="charts-row">
+  <!-- District-wise Compliance Bar -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">District-wise Compliance</div>
+      <div class="chart-sub">Ranked by compliance rate</div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="barChart" height="260"></canvas>
+    </div>
+  </div>
+
+  <!-- Compliance Trend Line -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">Compliance Trend (6 Months)</div>
+      <div class="chart-sub">Category-wise compliance over time</div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="lineChart" height="220"></canvas>
+    </div>
+    <div class="trend-legend">
+      <div class="tl-item"><div class="tl-dot" style="background:#1e3a5f"></div> Overall</div>
+      <div class="tl-item"><div class="tl-dot" style="background:#dc2626"></div> Safety</div>
+      <div class="tl-item"><div class="tl-dot" style="background:#16a34a"></div> Documents</div>
+      <div class="tl-item"><div class="tl-dot" style="background:#2563eb"></div> Driver</div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM 3-GRID -->
+<div class="bottom-grid">
+  <!-- Inspection Performance -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">Inspection Performance</div>
+      <div class="chart-sub">Scheduled vs completed with fit rate</div>
+    </div>
+    <div class="insp-chart-wrap">
+      <canvas id="inspChart" height="200"></canvas>
+    </div>
+    <div class="trend-legend" style="margin-top:10px">
+      <div class="tl-item"><div class="tl-dot" style="background:#94a3b8"></div> Scheduled</div>
+      <div class="tl-item"><div class="tl-dot" style="background:#16a34a"></div> Completed</div>
+    </div>
+  </div>
+
+  <!-- Violation Donut -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">Violation Breakdown</div>
+      <div class="chart-sub">By category</div>
+    </div>
+    <div class="donut-wrap">
+      <canvas id="donutChart" class="donut-canvas" height="200"></canvas>
+      <div class="donut-legend">
+        <div class="dl-item"><div class="dl-dot" style="background:#dc2626"></div> Safety Equipment</div>
+        <div class="dl-item"><div class="dl-dot" style="background:#f59e0b"></div> Documents</div>
+        <div class="dl-item"><div class="dl-dot" style="background:#3b82f6"></div> Driver</div>
+        <div class="dl-item"><div class="dl-dot" style="background:#8b5cf6"></div> Vehicle Condition</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scheduled Reports -->
+  <div class="chart-card">
+    <div class="chart-header" style="display:flex;align-items:center;gap:8px">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#d97706" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <div>
+        <div class="chart-title">Scheduled Reports</div>
+        <div class="chart-sub">Auto-generated &amp; distributed</div>
+      </div>
+    </div>
+    <div class="sched-list">
+      <div class="sched-item">
+        <div>
+          <div class="sched-name">Daily Compliance Summary</div>
+          <div class="sched-sub">Daily · Next: Tomorrow 6:00 AM</div>
+        </div>
+        <span class="sched-badge">45 recipients</span>
+      </div>
+      <div class="sched-item">
+        <div>
+          <div class="sched-name">Weekly Inspection Report</div>
+          <div class="sched-sub">Weekly · Next: Mon, Mar 23</div>
+        </div>
+        <span class="sched-badge">120 recipients</span>
+      </div>
+      <div class="sched-item">
+        <div>
+          <div class="sched-name">Monthly State Dashboard</div>
+          <div class="sched-sub">Monthly · Next: Apr 1, 2026</div>
+        </div>
+        <span class="sched-badge">280 recipients</span>
+      </div>
+      <div class="sched-item">
+        <div>
+          <div class="sched-name">Quarterly Analytics Review</div>
+          <div class="sched-sub">Quarterly · Next: Apr 1, 2026</div>
+        </div>
+        <span class="sched-badge">15 recipients</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT LIBRARY -->
+<div class="library-header">
+  <div class="library-title-block">
+    <div class="section-title">Report Library — 12 Reports</div>
+    <div class="section-sub">Exportable as PDF, Excel &amp; CSV</div>
+  </div>
+  <div class="search-reports">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" placeholder="Search reports..." oninput="filterReports(this.value)"/>
+  </div>
+</div>
+
+<div class="filter-tabs">
+  <button class="ftab active" onclick="filterTab(this,'all')">All</button>
+  <button class="ftab" onclick="filterTab(this,'compliance')">Compliance</button>
+  <button class="ftab" onclick="filterTab(this,'inspection')">Inspection</button>
+  <button class="ftab" onclick="filterTab(this,'violation')">Violation</button>
+  <button class="ftab" onclick="filterTab(this,'other')">Other</button>
+</div>
+
+<div class="report-list" id="reportList">
+  <!-- reports injected by JS -->
+</div>
+
+<script>
+// ── DATA ──
+const reports = [
+  { name:'School-Wise Vehicle & Driver Compliance', cat:'compliance', badge:'rb-compliance', badgeLabel:'Compliance', level:'School Level', date:'2026-03-18', dl:234 },
+  { name:'Block-Wise Compliance Status',            cat:'compliance', badge:'rb-compliance', badgeLabel:'Compliance', level:'Block Level',  date:'2026-03-18', dl:189 },
+  { name:'Thana-Wise Vehicle & Inspection Status',  cat:'inspection', badge:'rb-inspection', badgeLabel:'Inspection', level:'Thana Level',  date:'2026-03-17', dl:156 },
+  { name:'District-Wise Compliance Report',         cat:'compliance', badge:'rb-compliance', badgeLabel:'Compliance', level:'District Level',date:'2026-03-17', dl:312 },
+  { name:'State Level Vehicle Summary',             cat:'other',      badge:'rb-summary',    badgeLabel:'Summary',    level:'State Level',   date:'2026-03-16', dl:445 },
+  { name:'Fitness/Insurance/PUC Expiry Report',     cat:'other',      badge:'rb-doc-expiry', badgeLabel:'Document Expiry',level:'State Level',date:'2026-03-16', dl:278 },
+  { name:'Vendor Fleet Distribution Report',        cat:'other',      badge:'rb-vendor',     badgeLabel:'Vendor',     level:'District Level',date:'2026-03-15', dl:123 },
+  { name:'Monthly Inspection Performance',          cat:'inspection', badge:'rb-inspection', badgeLabel:'Inspection', level:'State Level',   date:'2026-03-14', dl:198 },
+  { name:'Violation Statistics & Trend Analysis',   cat:'violation',  badge:'rb-violation',  badgeLabel:'Violation',  level:'State Level',   date:'2026-03-14', dl:267 },
+  { name:'GPS/CCTV Coverage Report',                cat:'other',      badge:'rb-safety',     badgeLabel:'Safety',     level:'District Level',date:'2026-03-13', dl:145 },
+  { name:'Driver Verification Status Report',       cat:'other',      badge:'rb-driver',     badgeLabel:'Driver',     level:'State Level',   date:'2026-03-12', dl:176 },
+  { name:'Committee Meeting Compliance Report',     cat:'compliance', badge:'rb-committee',  badgeLabel:'Committee',  level:'District Level',date:'2026-03-11', dl:89  },
+];
+
+let activeTab = 'all';
+let searchQ = '';
+
+function renderReports() {
+  const list = document.getElementById('reportList');
+  const filtered = reports.filter(r => {
+    const tabOk = activeTab === 'all' || r.cat === activeTab;
+    const srchOk = r.name.toLowerCase().includes(searchQ.toLowerCase());
+    return tabOk && srchOk;
+  });
+  list.innerHTML = filtered.map(r => `
+    <div class="report-item">
+      <div class="report-icon">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <div class="report-info">
+        <div class="report-name">${r.name}</div>
+        <div class="report-meta">
+          <span class="rbadge ${r.badge}">${r.badgeLabel}</span>
+          <span class="report-level">${r.level}</span>
+          <span class="report-date">· ${r.date}</span>
+          <span class="report-dl">· ${r.dl} downloads</span>
+        </div>
+      </div>
+      <div class="report-actions">
+        <button class="dl-btn">
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          PDF
+        </button>
+        <button class="dl-btn">
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Excel
+        </button>
+        <button class="dl-btn csv">CSV</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterTab(el, tab) {
+  document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  activeTab = tab;
+  renderReports();
+}
+function filterReports(q) { searchQ = q; renderReports(); }
+renderReports();
+
+// ── CHARTS ──
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.color = '#64748b';
+
+// 1. District Bar Chart
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Noida','Lucknow','Ghaziabad','Prayagraj','Agra','Bareilly','Kanpur','Gorakhpur','Varanasi','Meerut'],
+    datasets: [
+      {
+        label: 'Previous Month',
+        data: [84,82,80,78,76,74,72,70,68,60],
+        backgroundColor: '#e2e8f0',
+        borderRadius: 3, barPercentage: 0.55,
+      },
+      {
+        label: 'Current %',
+        data: [92,88,86,83,80,78,75,72,70,63],
+        backgroundColor: '#1e3a5f',
+        borderRadius: 3, barPercentage: 0.55,
+      }
+    ]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
+      tooltip: { mode: 'index' }
+    },
+    scales: {
+      x: { min: 0, max: 100, grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// 2. Compliance Trend Line
+const months = ['Oct','Nov','Dec','Jan','Feb','Mar'];
+new Chart(document.getElementById('lineChart'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [
+      { label:'Overall',   data:[79,80,81,82,83,84], borderColor:'#1e3a5f', backgroundColor:'rgba(30,58,95,0.07)', tension:0.4, pointRadius:3, fill:true },
+      { label:'Safety',    data:[77,77,78,79,79,80], borderColor:'#dc2626', backgroundColor:'transparent', tension:0.4, pointRadius:3, borderDash:[4,3] },
+      { label:'Documents', data:[84,85,86,87,88,90], borderColor:'#16a34a', backgroundColor:'transparent', tension:0.4, pointRadius:3, borderDash:[4,3] },
+      { label:'Driver',    data:[80,80,81,82,82,83], borderColor:'#2563eb', backgroundColor:'transparent', tension:0.4, pointRadius:3, borderDash:[4,3] },
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
+      y: { min: 60, max: 100, grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// 3. Inspection Performance Line
+new Chart(document.getElementById('inspChart'), {
+  type: 'line',
+  data: {
+    labels: ['Oct','Nov','Dec','Jan','Feb','Mar'],
+    datasets: [
+      { label:'Scheduled', data:[1100,1050,980,1000,1080,1150], borderColor:'#94a3b8', backgroundColor:'transparent', tension:0.4, pointRadius:4, borderDash:[5,3] },
+      { label:'Completed', data:[920,900,870,920,960,980],      borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,0.08)', tension:0.4, pointRadius:4, fill:true },
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
+      y: { min: 0, max: 1200, grid: { color: '#f1f5f9' }, ticks: { stepSize: 300, font: { size: 11 } } }
+    }
+  }
+});
+
+// 4. Violation Donut
+new Chart(document.getElementById('donutChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Safety Equipment','Documents','Driver','Vehicle Condition'],
+    datasets: [{
+      data: [35, 28, 20, 17],
+      backgroundColor: ['#dc2626','#f59e0b','#3b82f6','#8b5cf6'],
+      borderWidth: 2, borderColor: '#fff',
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    cutout: '65%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` } }
+    }
+  }
+});
+</script>
+</body>
+</html>

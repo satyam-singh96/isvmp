@@ -1,0 +1,496 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Compliance Monitoring – ISVMP</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#f4f6f9;color:#1a2332;padding:24px 28px;min-height:100vh}
+
+/* ── HEADER ── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+.page-header h1{font-size:22px;font-weight:700}
+.page-header p{font-size:12.5px;color:#6b7a90;margin-top:3px}
+.header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.filter-select{border:1px solid #dde3ec;border-radius:8px;padding:7px 28px 7px 11px;font-size:13px;color:#1a2332;outline:none;background:#f8fafc;appearance:none;cursor:pointer;font-family:inherit;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%236b7a90' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.btn-outline-dark{background:#fff;border:1px solid #dde3ec;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;color:#1a2332;transition:.15s}
+.btn-outline-dark:hover{background:#f4f6f9}
+
+/* ── STAT CARDS ── */
+.stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-card{border-radius:12px;padding:20px 18px;position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.stat-card.blue  {background:linear-gradient(135deg,#1e3a5f,#2563a8);color:#fff}
+.stat-card.green {background:linear-gradient(135deg,#1a7a4a,#2da862);color:#fff}
+.stat-card.amber {background:linear-gradient(135deg,#b45309,#f59e0b);color:#fff}
+.stat-card.red   {background:linear-gradient(135deg,#991b1b,#dc2626);color:#fff}
+.s-label{font-size:10.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;opacity:.82;margin-bottom:8px;line-height:1.3}
+.s-val{font-size:30px;font-weight:700;line-height:1}
+.s-sub{font-size:11px;opacity:.75;margin-top:5px}
+.s-trend{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:4px}
+.s-trend.up{color:#86efac}
+.s-icon{position:absolute;top:14px;right:14px;font-size:22px;opacity:.2}
+
+/* ── THREE COLUMN ROW ── */
+.three-col{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:16px;margin-bottom:20px}
+.section-card{background:#fff;border-radius:13px;padding:22px 24px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.section-title{font-size:14px;font-weight:600;color:#1a2332;margin-bottom:4px}
+.section-sub{font-size:11.5px;color:#8fa0b4;margin-bottom:18px}
+
+/* ── DONUT ── */
+.donut-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;margin:4px 0 16px}
+.donut-svg{position:relative}
+.donut-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut-pct{font-size:26px;font-weight:700;color:#1a2332}
+.donut-lbl{font-size:11px;color:#8fa0b4}
+.score-pills{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.score-pill{text-align:center;padding:10px 6px;border-radius:9px;background:#f8fafc}
+.pill-val{font-size:18px;font-weight:700}
+.pill-lbl{font-size:10px;color:#8fa0b4;margin-top:2px}
+.pill-val.green{color:#2da862}.pill-val.amber{color:#e67e22}.pill-val.blue{color:#2563a8}
+
+/* ── EXPIRY LIST ── */
+.expiry-list{display:flex;flex-direction:column;gap:0}
+.expiry-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f4f6f9}
+.expiry-row:last-child{border-bottom:none}
+.expiry-name{font-size:13px;color:#1a2332}
+.expiry-count{font-size:13px;font-weight:700;color:#e74c3c;display:flex;align-items:center;gap:5px}
+.expiry-total{font-size:12px;font-weight:700;color:#e74c3c;padding:6px 0;border-top:2px solid #f0f3f7;margin-top:4px;display:flex;justify-content:space-between}
+
+/* ── VIOLATIONS ── */
+.viol-list{display:flex;flex-direction:column;gap:10px}
+.viol-item{padding:11px 13px;border-radius:9px;border:1px solid #f0f3f7;background:#fafbfc}
+.viol-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.viol-name{font-size:13px;font-weight:600;color:#1a2332}
+.viol-meta{font-size:11px;color:#8fa0b4;margin-top:2px}
+.view-all{text-align:center;margin-top:12px}
+.view-all a{font-size:12.5px;color:#1e3a5f;font-weight:600;text-decoration:none}
+.view-all a:hover{text-decoration:underline}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10.5px;font-weight:600;white-space:nowrap}
+.badge-dot{width:5px;height:5px;border-radius:50%}
+.badge.compliant{background:#e8f9ef;color:#1a7a4a}.badge.compliant .badge-dot{background:#2da862}
+.badge.warning  {background:#fef3e2;color:#a05a00}.badge.warning   .badge-dot{background:#e67e22}
+.badge.violation{background:#fdecea;color:#c0392b}.badge.violation .badge-dot{background:#e74c3c}
+
+/* ── TABS ── */
+.tabs-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.tabs{display:flex;border-bottom:2px solid #e8ecf1;margin-bottom:0}
+.tab{padding:8px 18px;font-size:13px;font-weight:500;color:#6b7a90;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s;white-space:nowrap}
+.tab.active{color:#1e3a5f;border-bottom-color:#1e3a5f;font-weight:600}
+.tab-search{border:1px solid #dde3ec;border-radius:8px;padding:7px 12px 7px 32px;font-size:13px;color:#1a2332;outline:none;font-family:inherit;background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24'%3E%3Cpath d='M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z' stroke='%236b7a90' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 10px center;width:220px}
+
+/* ── PARAMETER GROUPS ── */
+.param-group{background:#fff;border-radius:13px;padding:20px 24px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px}
+.group-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.group-left{display:flex;align-items:center;gap:10px}
+.group-icon{width:34px;height:34px;border-radius:8px;background:#f0f4f8;display:flex;align-items:center;justify-content:center;font-size:17px}
+.group-title{font-size:14px;font-weight:600}
+.group-sub{font-size:11px;color:#8fa0b4}
+.group-score{font-size:20px;font-weight:700}
+.group-score.green{color:#2da862}.group-score.amber{color:#e67e22}.group-score.red{color:#e74c3c}
+.group-score-lbl{font-size:10px;color:#8fa0b4;text-align:right}
+.group-divider{height:1px;background:#f0f3f7;margin:14px 0}
+
+/* parameter row */
+.param-row{display:flex;align-items:center;gap:12px;padding:7px 0;flex-wrap:nowrap}
+.param-name{font-size:13px;color:#1a2332;min-width:160px;flex-shrink:0}
+.param-bar-bg{flex:1;height:7px;background:#e8ecf1;border-radius:4px;overflow:hidden;min-width:80px}
+.param-bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.param-pct{font-size:12.5px;font-weight:700;min-width:34px;text-align:right}
+.param-trend{font-size:11px;color:#6b7a90;min-width:42px;text-align:right}
+.param-ok{font-size:11.5px;color:#2da862;min-width:70px;text-align:right}
+.param-x{font-size:11.5px;color:#e74c3c;min-width:60px;text-align:right}
+.expiring-chip{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:5px;background:#fef3e2;color:#a05a00;white-space:nowrap}
+.param-badge{min-width:80px;text-align:right}
+
+/* tab panels */
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1050px){.three-col{grid-template-columns:1fr 1fr};.three-col>:last-child{grid-column:1/-1}}
+@media(max-width:900px){.stat-cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){
+  body{padding:14px}
+  .three-col{grid-template-columns:1fr}
+  .stat-cards{grid-template-columns:repeat(2,1fr)}
+  .s-val{font-size:24px}
+  .section-card,.param-group{padding:14px}
+  .param-name{min-width:110px;font-size:12px}
+  .param-ok,.param-x,.param-trend{display:none}
+  .expiring-chip{display:none}
+  .param-badge{min-width:70px}
+  .page-header h1{font-size:18px}
+  .header-actions{width:100%}
+  .tab-search{width:100%}
+  .tabs-row{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="page-header">
+  <div>
+    <h1>Compliance Monitoring</h1>
+    <p>Overall compliance status across all parameters — 42,891 vehicles</p>
+  </div>
+  <div class="header-actions">
+    <select class="filter-select">
+      <option>All Districts</option>
+      <option>Lucknow</option><option>Kanpur</option><option>Agra</option>
+      <option>Varanasi</option><option>Prayagraj</option><option>Meerut</option>
+    </select>
+    <button class="btn-outline-dark">👁 Full Report</button>
+  </div>
+</div>
+
+<!-- ── STAT CARDS ── -->
+<div class="stat-cards">
+  <div class="stat-card blue">
+    <div class="s-label">Overall Score</div>
+    <div class="s-val">81%</div>
+    <div class="s-trend up">↑ 3.1% vs last month</div>
+    <div class="s-icon">🛡️</div>
+  </div>
+  <div class="stat-card green">
+    <div class="s-label">Fully Compliant</div>
+    <div class="s-val">34,712</div>
+    <div class="s-sub">80.9% of fleet</div>
+    <div class="s-icon">✅</div>
+  </div>
+  <div class="stat-card amber">
+    <div class="s-label">Partial Compliance</div>
+    <div class="s-val">5,432</div>
+    <div class="s-sub">12.7% of fleet</div>
+    <div class="s-icon">⚠️</div>
+  </div>
+  <div class="stat-card red">
+    <div class="s-label">Non-Compliant</div>
+    <div class="s-val">2,747</div>
+    <div class="s-sub">6.4% of fleet</div>
+    <div class="s-icon">🚨</div>
+  </div>
+</div>
+
+<!-- ── THREE COLUMN ROW ── -->
+<div class="three-col">
+
+  <!-- Overall Score Donut -->
+  <div class="section-card">
+    <div class="section-title">Overall Score</div>
+    <div class="section-sub">Across all parameters</div>
+    <div class="donut-wrap">
+      <div class="donut-svg" style="position:relative;width:140px;height:140px">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="55" fill="none" stroke="#e8ecf1" stroke-width="14"/>
+          <circle cx="70" cy="70" r="55" fill="none" stroke="#2da862" stroke-width="14"
+            stroke-dasharray="345.4" stroke-dashoffset="65.6"
+            stroke-linecap="round" transform="rotate(-90 70 70)"/>
+        </svg>
+        <div class="donut-inner">
+          <span class="donut-pct">81%</span>
+          <span class="donut-lbl">Overall</span>
+        </div>
+      </div>
+    </div>
+    <div class="score-pills">
+      <div class="score-pill">
+        <div class="pill-val green">90%</div>
+        <div class="pill-lbl">Documents</div>
+      </div>
+      <div class="score-pill">
+        <div class="pill-val amber">85%</div>
+        <div class="pill-lbl">Equipment</div>
+      </div>
+      <div class="score-pill">
+        <div class="pill-val blue">86%</div>
+        <div class="pill-lbl">Driver</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Expiring in 30 Days -->
+  <div class="section-card">
+    <div class="section-title">📅 Expiring in 30 Days</div>
+    <div class="section-sub">Documents requiring renewal</div>
+    <div class="expiry-list">
+      <div class="expiry-row"><span class="expiry-name">Fitness Certificate</span><span class="expiry-count">2,340 ⚠</span></div>
+      <div class="expiry-row"><span class="expiry-name">Insurance</span><span class="expiry-count">1,890 ⚠</span></div>
+      <div class="expiry-row"><span class="expiry-name">PUC Certificate</span><span class="expiry-count">3,210 ⚠</span></div>
+      <div class="expiry-row"><span class="expiry-name">Permit</span><span class="expiry-count">1,560 ⚠</span></div>
+      <div class="expiry-row"><span class="expiry-name">Driver License</span><span class="expiry-count">980 ⚠</span></div>
+      <div class="expiry-row"><span class="expiry-name">Medical Fitness</span><span class="expiry-count">1,540 ⚠</span></div>
+    </div>
+    <div class="expiry-total"><span>Total Expiring</span><span>11,520</span></div>
+  </div>
+
+  <!-- Recent Violations -->
+  <div class="section-card">
+    <div class="section-title">⚠ Recent Violations</div>
+    <div class="section-sub">Latest non-compliance findings</div>
+    <div class="viol-list">
+      <div class="viol-item">
+        <div class="viol-top">
+          <div>
+            <div class="viol-name">No GPS Device</div>
+            <div class="viol-meta">UP32 AT 1234 • Delhi Public School</div>
+          </div>
+          <span class="badge violation"><span class="badge-dot"></span>Violation</span>
+        </div>
+      </div>
+      <div class="viol-item">
+        <div class="viol-top">
+          <div>
+            <div class="viol-name">Expired Insurance</div>
+            <div class="viol-meta">UP65 BC 5678 • Ryan International</div>
+          </div>
+          <span class="badge warning"><span class="badge-dot"></span>Warning</span>
+        </div>
+      </div>
+      <div class="viol-item">
+        <div class="viol-top">
+          <div>
+            <div class="viol-name">No Speed Governor</div>
+            <div class="viol-meta">UP14 CD 9012 • St. Xavier's</div>
+          </div>
+          <span class="badge violation"><span class="badge-dot"></span>Violation</span>
+        </div>
+      </div>
+      <div class="viol-item">
+        <div class="viol-top">
+          <div>
+            <div class="viol-name">Driver Badge Missing</div>
+            <div class="viol-meta">UP70 EF 3456 • Army Public School</div>
+          </div>
+          <span class="badge warning"><span class="badge-dot"></span>Warning</span>
+        </div>
+      </div>
+      <div class="viol-item">
+        <div class="viol-top">
+          <div>
+            <div class="viol-name">No CCTV Camera</div>
+            <div class="viol-meta">UP78 GH 7890 • City Montessori</div>
+          </div>
+          <span class="badge violation"><span class="badge-dot"></span>Violation</span>
+        </div>
+      </div>
+    </div>
+    <div class="view-all"><a href="#">View All Violations →</a></div>
+  </div>
+</div>
+
+<!-- ── PARAMETER TABS ── -->
+<div class="section-card" style="padding:22px 24px">
+  <div class="tabs-row">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('by-param',this)">By Parameter</div>
+      <div class="tab" onclick="switchTab('by-district',this)">By District</div>
+    </div>
+    <input class="tab-search" type="text" placeholder="Search parameter or district..." id="paramSearch" oninput="filterParams()"/>
+  </div>
+
+  <!-- BY PARAMETER -->
+  <div class="tab-panel active" id="by-param">
+
+    <!-- Safety Equipment -->
+    <div class="param-group" id="grp-safety">
+      <div class="group-header">
+        <div class="group-left">
+          <div class="group-icon">🛡️</div>
+          <div>
+            <div class="group-title">Safety Equipment</div>
+            <div class="group-sub">7 parameters tracked</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="group-score amber">85%</div>
+          <div class="group-score-lbl">avg. compliance</div>
+        </div>
+      </div>
+      <div class="group-divider"></div>
+      <div id="rows-safety"></div>
+    </div>
+
+    <!-- Documents -->
+    <div class="param-group" id="grp-docs">
+      <div class="group-header">
+        <div class="group-left">
+          <div class="group-icon">📄</div>
+          <div>
+            <div class="group-title">Documents</div>
+            <div class="group-sub">6 parameters tracked</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="group-score green">93%</div>
+          <div class="group-score-lbl">avg. compliance</div>
+        </div>
+      </div>
+      <div class="group-divider"></div>
+      <div id="rows-docs"></div>
+    </div>
+
+    <!-- Driver Compliance -->
+    <div class="param-group" id="grp-driver">
+      <div class="group-header">
+        <div class="group-left">
+          <div class="group-icon">👤</div>
+          <div>
+            <div class="group-title">Driver Compliance</div>
+            <div class="group-sub">5 parameters tracked</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="group-score amber">85%</div>
+          <div class="group-score-lbl">avg. compliance</div>
+        </div>
+      </div>
+      <div class="group-divider"></div>
+      <div id="rows-driver"></div>
+    </div>
+
+    <!-- Vehicle Condition -->
+    <div class="param-group" id="grp-vehicle">
+      <div class="group-header">
+        <div class="group-left">
+          <div class="group-icon">🚌</div>
+          <div>
+            <div class="group-title">Vehicle Condition</div>
+            <div class="group-sub">5 parameters tracked</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="group-score green">92%</div>
+          <div class="group-score-lbl">avg. compliance</div>
+        </div>
+      </div>
+      <div class="group-divider"></div>
+      <div id="rows-vehicle"></div>
+    </div>
+
+  </div><!-- end by-param -->
+
+  <!-- BY DISTRICT -->
+  <div class="tab-panel" id="by-district">
+    <div class="param-group" style="margin-bottom:0">
+      <div id="rows-district"></div>
+    </div>
+  </div>
+
+</div><!-- end section-card -->
+
+<script>
+// ── DATA ──────────────────────────────────────────────
+const safetyParams=[
+  {name:'Fire Extinguisher', pct:90, trend:'+3%', ok:38420, x:4471, expiring:1230, status:'Compliant'},
+  {name:'First Aid Kit',     pct:93, trend:'+2%', ok:40100, x:2791, expiring:840,  status:'Compliant'},
+  {name:'GPS Device',        pct:83, trend:'+3%', ok:35800, x:7091, expiring:null, status:'Warning'},
+  {name:'Speed Governor',    pct:77, trend:'+3%', ok:33200, x:9691, expiring:null, status:'Warning'},
+  {name:'CCTV Camera',       pct:70, trend:'+5%', ok:30100, x:12791,expiring:null, status:'Violation'},
+  {name:'Emergency Exit',    pct:93, trend:'+3%', ok:39800, x:3091, expiring:null, status:'Compliant'},
+  {name:'Reflective Tape',   pct:87, trend:'+5%', ok:37100, x:5791, expiring:null, status:'Warning'},
+];
+const docParams=[
+  {name:'Fitness Certificate',pct:92, trend:'+3%', ok:39500, x:3391, expiring:2340, status:'Compliant'},
+  {name:'Insurance',          pct:96, trend:'+1%', ok:41200, x:1691, expiring:1890, status:'Compliant'},
+  {name:'Permit',             pct:95, trend:'+2%', ok:40800, x:2091, expiring:1560, status:'Compliant'},
+  {name:'PUC Certificate',    pct:88, trend:'+4%', ok:37600, x:5291, expiring:3210, status:'Warning'},
+  {name:'Route Chart',        pct:91, trend:'+3%', ok:38900, x:3991, expiring:null, status:'Compliant'},
+  {name:'Tax Receipt',        pct:94, trend:'+1%', ok:40500, x:2391, expiring:1120, status:'Compliant'},
+];
+const driverParams=[
+  {name:'Valid License',         pct:97, trend:'+1%', ok:41800, x:1091, expiring:980,  status:'Compliant'},
+  {name:'Driver Badge',          pct:84, trend:'+4%', ok:36200, x:6691, expiring:null, status:'Warning'},
+  {name:'Background Verification',pct:81,trend:'+4%', ok:34900, x:7991, expiring:null, status:'Warning'},
+  {name:'Medical Fitness',       pct:89, trend:'+4%', ok:38100, x:4791, expiring:1540, status:'Warning'},
+  {name:'Training Certificate',  pct:76, trend:'+5%', ok:32400, x:10491,expiring:null, status:'Warning'},
+];
+const vehicleParams=[
+  {name:'Brakes',           pct:94, trend:'+2%', ok:40200, x:2691, expiring:null, status:'Compliant'},
+  {name:'Tyres',            pct:90, trend:'+3%', ok:38700, x:4191, expiring:null, status:'Compliant'},
+  {name:'Lights & Indicators',pct:93,trend:'+2%', ok:39900, x:2991, expiring:null, status:'Compliant'},
+  {name:'Body Condition',   pct:87, trend:'+3%', ok:37400, x:5491, expiring:null, status:'Warning'},
+  {name:'Seating Capacity', pct:95, trend:'+1%', ok:40800, x:2091, expiring:null, status:'Compliant'},
+];
+const districtData=[
+  {name:'Lucknow',   vehicles:8420, compliant:7100, pct:84, status:'Warning'},
+  {name:'Kanpur',    vehicles:6230, compliant:4970, pct:80, status:'Warning'},
+  {name:'Agra',      vehicles:4810, compliant:4230, pct:88, status:'Compliant'},
+  {name:'Varanasi',  vehicles:3920, compliant:3410, pct:87, status:'Compliant'},
+  {name:'Prayagraj', vehicles:3640, compliant:3020, pct:83, status:'Warning'},
+  {name:'Meerut',    vehicles:2980, compliant:2350, pct:79, status:'Warning'},
+  {name:'Gorakhpur', vehicles:2760, compliant:2450, pct:89, status:'Compliant'},
+  {name:'Mathura',   vehicles:1890, compliant:1530, pct:81, status:'Warning'},
+  {name:'Bareilly',  vehicles:2120, compliant:1830, pct:86, status:'Compliant'},
+  {name:'Aligarh',   vehicles:1740, compliant:1390, pct:80, status:'Warning'},
+];
+
+function barColor(p){ return p>=90?'#2da862':p>=75?'#e67e22':'#e74c3c'; }
+function badgeHTML(s){
+  const c=s==='Compliant'?'compliant':s==='Warning'?'warning':'violation';
+  return `<span class="badge ${c}"><span class="badge-dot"></span>${s}</span>`;
+}
+function paramRow(p){
+  const col=barColor(p.pct);
+  return `<div class="param-row">
+    <span class="param-name">${p.name}</span>
+    <div class="param-bar-bg"><div class="param-bar-fill" style="width:${p.pct}%;background:${col}"></div></div>
+    <span class="param-pct" style="color:${col}">${p.pct}%</span>
+    <span class="param-trend">↑${p.trend}</span>
+    <span class="param-ok">${p.ok.toLocaleString()} ✓</span>
+    <span class="param-x">${p.x.toLocaleString()} ✗</span>
+    ${p.expiring?`<span class="expiring-chip">${p.expiring.toLocaleString()} expiring</span>`:'<span style="min-width:88px"></span>'}
+    <span class="param-badge">${badgeHTML(p.status)}</span>
+  </div>`;
+}
+function districtRow(d){
+  const col=barColor(d.pct);
+  return `<div class="param-row">
+    <span class="param-name">${d.name}</span>
+    <div class="param-bar-bg"><div class="param-bar-fill" style="width:${d.pct}%;background:${col}"></div></div>
+    <span class="param-pct" style="color:${col}">${d.pct}%</span>
+    <span class="param-ok">${d.compliant.toLocaleString()} ✓</span>
+    <span class="param-x">${(d.vehicles-d.compliant).toLocaleString()} ✗</span>
+    <span class="param-trend">${d.vehicles.toLocaleString()} total</span>
+    <span class="param-badge">${badgeHTML(d.status)}</span>
+  </div>`;
+}
+
+function renderAll(){
+  document.getElementById('rows-safety').innerHTML  = safetyParams.map(paramRow).join('');
+  document.getElementById('rows-docs').innerHTML    = docParams.map(paramRow).join('');
+  document.getElementById('rows-driver').innerHTML  = driverParams.map(paramRow).join('');
+  document.getElementById('rows-vehicle').innerHTML = vehicleParams.map(paramRow).join('');
+  document.getElementById('rows-district').innerHTML= districtData.map(districtRow).join('');
+}
+
+function switchTab(id,el){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+
+function filterParams(){
+  const q=document.getElementById('paramSearch').value.toLowerCase();
+  const active=document.querySelector('.tab-panel.active').id;
+  if(active==='by-param'){
+    ['safety','docs','driver','vehicle'].forEach(grp=>{
+      const allRows={safety:safetyParams,docs:docParams,driver:driverParams,vehicle:vehicleParams};
+      const filtered=allRows[grp].filter(p=>!q||p.name.toLowerCase().includes(q));
+      document.getElementById('rows-'+grp).innerHTML=filtered.map(paramRow).join('');
+      document.getElementById('grp-'+grp).style.display=filtered.length?'':'none';
+    });
+  } else {
+    const filtered=districtData.filter(d=>!q||d.name.toLowerCase().includes(q));
+    document.getElementById('rows-district').innerHTML=filtered.map(districtRow).join('');
+  }
+}
+
+renderAll();
+</script>
+</body>
+</html>

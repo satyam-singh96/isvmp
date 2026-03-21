@@ -1,0 +1,406 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Vendor Management – ISVMP</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#f4f6f9;color:#1a2332;padding:24px 28px;min-height:100vh}
+
+/* ── HEADER ── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+.page-header h1{font-size:22px;font-weight:700;color:#1a2332}
+.page-header p{font-size:12.5px;color:#6b7a90;margin-top:3px}
+.btn-primary{background:#1e3a5f;color:#fff;border:none;border-radius:9px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:.15s}
+.btn-primary:hover{background:#2563a8}
+
+/* ── STAT CARDS ── */
+.stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-card{border-radius:12px;padding:20px 18px;position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.stat-card.blue {background:linear-gradient(135deg,#1e3a5f,#2563a8);color:#fff}
+.stat-card.grey {background:#fff;color:#1a2332;border:1px solid #e8ecf1}
+.stat-card.green{background:linear-gradient(135deg,#1a7a4a,#2da862);color:#fff}
+.s-label{font-size:10.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;opacity:.82;margin-bottom:9px;line-height:1.3}
+.stat-card.grey .s-label{color:#6b7a90;opacity:1}
+.s-val{font-size:32px;font-weight:700;line-height:1}
+.s-icon{position:absolute;top:14px;right:14px;font-size:22px;opacity:.2}
+
+/* ── SECTION CARD ── */
+.section-card{background:#fff;border-radius:13px;padding:22px 24px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+
+/* ── TOOLBAR ── */
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.toolbar-left{font-size:15px;font-weight:600;color:#1a2332}
+.toolbar-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.search-input{border:1px solid #dde3ec;border-radius:8px;padding:7px 12px 7px 32px;font-size:13px;color:#1a2332;outline:none;font-family:inherit;background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24'%3E%3Cpath d='M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z' stroke='%236b7a90' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 10px center;width:210px}
+.filter-select{border:1px solid #dde3ec;border-radius:8px;padding:7px 28px 7px 11px;font-size:13px;color:#1a2332;outline:none;background:#f8fafc;appearance:none;cursor:pointer;font-family:inherit;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%236b7a90' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:620px}
+thead th{font-size:10.5px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#8fa0b4;text-align:left;padding:9px 14px;border-bottom:1px solid #f0f3f7;white-space:nowrap}
+tbody tr{border-bottom:1px solid #f4f6f9;cursor:pointer;transition:background .15s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f8fafc}
+tbody td{padding:14px 14px;font-size:13px;color:#1a2332;vertical-align:middle}
+.vendor-name{font-weight:600;color:#1a2332}
+.fleet-bold{font-weight:700;font-size:14px}
+.compliant-ratio{font-size:13px;color:#6b7a90}
+
+/* score mini bar */
+.score-wrap{display:flex;align-items:center;gap:7px}
+.score-bar-bg{width:48px;height:5px;background:#e8ecf1;border-radius:3px;overflow:hidden;flex-shrink:0}
+.score-bar-fill{height:100%;border-radius:3px}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-dot{width:6px;height:6px;border-radius:50%}
+.badge.compliant{background:#e8f9ef;color:#1a7a4a}.badge.compliant .badge-dot{background:#2da862}
+.badge.warning  {background:#fef3e2;color:#a05a00}.badge.warning   .badge-dot{background:#e67e22}
+.badge.violation{background:#fdecea;color:#c0392b}.badge.violation .badge-dot{background:#e74c3c}
+
+/* pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid #f0f3f7}
+.page-info{font-size:12px;color:#8fa0b4}
+.page-btns{display:flex;gap:4px}
+.page-btn{border:1px solid #dde3ec;background:#fff;border-radius:6px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;color:#1a2332;font-family:inherit;transition:.15s}
+.page-btn:hover{background:#f4f6f9}
+.page-btn.active{background:#1e3a5f;color:#fff;border-color:#1e3a5f}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:620px;max-height:92vh;overflow-y:auto;padding:26px;box-shadow:0 10px 40px rgba(0,0,0,.18)}
+.modal-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.modal-header h2{font-size:18px;font-weight:700}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#6b7a90;line-height:1;padding:0}
+.modal-sec-title{font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#8fa0b4;margin-bottom:10px;margin-top:18px}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-item{background:#f8fafc;border-radius:8px;padding:11px 13px}
+.modal-item .m-label{font-size:10px;color:#8fa0b4;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.modal-item .m-val{font-size:13px;font-weight:600;color:#1a2332}
+.modal-item .m-val.ok{color:#2da862}
+.modal-item .m-val.warn{color:#e67e22}
+.modal-item .m-val.bad{color:#e74c3c}
+
+/* fleet breakdown */
+.fleet-bars{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.fb-row{display:flex;align-items:center;gap:10px;font-size:12px}
+.fb-label{width:110px;color:#6b7a90;flex-shrink:0}
+.fb-bar-bg{flex:1;height:8px;background:#e8ecf1;border-radius:4px;overflow:hidden}
+.fb-bar-fill{height:100%;border-radius:4px}
+.fb-val{width:36px;text-align:right;font-weight:600;font-size:12px;color:#1a2332}
+
+/* vehicle chips */
+.v-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.v-chip{padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:500;background:#f0f4f8;color:#1a2332;font-family:monospace}
+.v-chip.ok{background:#e8f9ef;color:#1a7a4a}
+.v-chip.bad{background:#fdecea;color:#c0392b}
+
+.modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.btn-sm{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:.15s}
+.btn-sm.primary{background:#1e3a5f;color:#fff}.btn-sm.primary:hover{background:#2563a8}
+.btn-sm.outline{background:#fff;border:1px solid #dde3ec;color:#1a2332}.btn-sm.outline:hover{background:#f4f6f9}
+.btn-sm.danger{background:#fdecea;color:#c0392b;border:1px solid #fcc}
+
+/* progress ring in stat card */
+.ring-wrap{position:absolute;bottom:12px;right:14px;width:44px;height:44px}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.18);stroke-width:4}
+.ring-fill{fill:none;stroke:rgba(255,255,255,.75);stroke-width:4;stroke-linecap:round;stroke-dasharray:113;transition:stroke-dashoffset .5s}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){.stat-cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){
+  body{padding:14px}
+  .stat-cards{grid-template-columns:repeat(2,1fr)}
+  .s-val{font-size:24px}
+  .section-card{padding:14px}
+  .search-input{width:100%}
+  .toolbar-right{width:100%}
+  .search-input,.filter-select{flex:1}
+  .page-header h1{font-size:18px}
+  .modal-grid{grid-template-columns:1fr}
+  .modal{padding:18px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="page-header">
+  <div>
+    <h1>Vendor Management</h1>
+    <p>Manage bus vendors and their fleet compliance</p>
+  </div>
+  <button class="btn-primary" onclick="openAddVendor()">＋ Add Vendor</button>
+</div>
+
+<!-- ── STAT CARDS ── -->
+<div class="stat-cards">
+  <div class="stat-card blue">
+    <div class="s-label">Total Vendors</div>
+    <div class="s-val">2,341</div>
+    <div class="s-icon">🏢</div>
+  </div>
+  <div class="stat-card grey">
+    <div class="s-label" style="color:#6b7a90">Total Fleet</div>
+    <div class="s-val">42,891</div>
+    <div class="s-icon" style="opacity:.25">🚌</div>
+  </div>
+  <div class="stat-card grey">
+    <div class="s-label" style="color:#6b7a90">Schools Served</div>
+    <div class="s-val">18,432</div>
+    <div class="s-icon" style="opacity:.25">🏫</div>
+  </div>
+  <div class="stat-card green">
+    <div class="s-label">Avg Compliance</div>
+    <div class="s-val">81%</div>
+    <div class="ring-wrap">
+      <svg viewBox="0 0 40 40" width="44" height="44">
+        <circle class="ring-bg" cx="20" cy="20" r="18"/>
+        <circle class="ring-fill" cx="20" cy="20" r="18" style="stroke-dashoffset:21.47"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ── TABLE ── -->
+<div class="section-card">
+  <div class="table-toolbar">
+    <div class="toolbar-left">All Vendors</div>
+    <div class="toolbar-right">
+      <input class="search-input" type="text" placeholder="Search vendors..." id="vendorSearch" oninput="filterVendors()"/>
+      <select class="filter-select" id="statusFilter" onchange="filterVendors()">
+        <option value="">All Status</option>
+        <option value="Compliant">Compliant</option>
+        <option value="Warning">Warning</option>
+        <option value="Violation">Violation</option>
+      </select>
+      <select class="filter-select" id="districtFilter" onchange="filterVendors()">
+        <option value="">All Districts</option>
+        <option value="Lucknow">Lucknow</option>
+        <option value="Kanpur">Kanpur</option>
+        <option value="Agra">Agra</option>
+        <option value="Varanasi">Varanasi</option>
+        <option value="Prayagraj">Prayagraj</option>
+        <option value="Meerut">Meerut</option>
+        <option value="Gorakhpur">Gorakhpur</option>
+        <option value="Allahabad">Allahabad</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Vendor Name</th>
+          <th>District</th>
+          <th>Fleet Size</th>
+          <th>Schools Served</th>
+          <th>Compliant Buses</th>
+          <th>Avg Compliance</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="vendorTbody"></tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <div class="page-info" id="pageInfo">Showing 1–10 of 2,341 vendors</div>
+    <div class="page-btns">
+      <button class="page-btn">‹</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <button class="page-btn">…</button>
+      <button class="page-btn">235</button>
+      <button class="page-btn">›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── VENDOR DETAIL MODAL ── -->
+<div class="modal-overlay" id="vendorModal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalName">Sharma Transport Co.</h2>
+        <div id="modalBadge" style="margin-top:6px"></div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('vendorModal').classList.remove('open')">✕</button>
+    </div>
+    <div id="modalContent"></div>
+    <div class="modal-actions">
+      <button class="btn-sm primary">View Full Profile</button>
+      <button class="btn-sm outline">Assign Schools</button>
+      <button class="btn-sm outline">Send Notice</button>
+      <button class="btn-sm danger">Suspend Vendor</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD VENDOR MODAL ── -->
+<div class="modal-overlay" id="addModal" onclick="closeAddModal(event)">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div><h2 style="font-family:'DM Sans',sans-serif">Add New Vendor</h2></div>
+      <button class="modal-close" onclick="document.getElementById('addModal').classList.remove('open')">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#6b7a90;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Vendor Name *</label>
+        <input style="width:100%;border:1px solid #dde3ec;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none" placeholder="e.g. ABC Transport Pvt. Ltd."/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:11px;font-weight:600;color:#6b7a90;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">District *</label>
+          <select style="width:100%;border:1px solid #dde3ec;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;appearance:none;background:#fff">
+            <option>Select District</option>
+            <option>Lucknow</option><option>Kanpur</option><option>Agra</option>
+            <option>Varanasi</option><option>Prayagraj</option><option>Meerut</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:#6b7a90;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Fleet Size *</label>
+          <input type="number" style="width:100%;border:1px solid #dde3ec;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none" placeholder="0"/>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#6b7a90;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Contact Person</label>
+        <input style="width:100%;border:1px solid #dde3ec;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none" placeholder="Full name"/>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#6b7a90;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Phone Number</label>
+        <input style="width:100%;border:1px solid #dde3ec;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none" placeholder="10-digit mobile"/>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn-sm primary" style="flex:1;justify-content:center" onclick="alert('Vendor registered!');document.getElementById('addModal').classList.remove('open')">Register Vendor</button>
+        <button class="btn-sm outline" onclick="document.getElementById('addModal').classList.remove('open')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const vendors = [
+  { name:'Sharma Transport Co.',   district:'Lucknow',   fleet:45, schools:12, compliant:38, status:'Compliant', contact:'Mr. R. Sharma',   phone:'9876543210', since:'2019', gst:'09AABCS1234A1Z5', vehicles:['UP32 AB 1234','UP32 CD 5678','UP32 GH 3456','UP32 KL 2345','UP32 MN 6789'] },
+  { name:'UP School Bus Services', district:'Kanpur',    fleet:72, schools:22, compliant:50, status:'Warning',   contact:'Mrs. P. Gupta',   phone:'9812345678', since:'2017', gst:'09AAGCU5678B1Z3', vehicles:['UP78 CD 5678','UP78 EF 9012','UP78 GH 3456'] },
+  { name:'SafeRide Pvt. Ltd.',     district:'Agra',      fleet:34, schools:8,  compliant:33, status:'Compliant', contact:'Mr. V. Saxena',   phone:'9823456789', since:'2020', gst:'09AAHCS9012C1Z1', vehicles:['UP65 EF 9012','UP65 OP 1357'] },
+  { name:'Royal Transport',        district:'Varanasi',  fleet:28, schools:6,  compliant:15, status:'Violation', contact:'Mr. A. Singh',    phone:'9834567890', since:'2016', gst:'09AAJCS3456D1Z9', vehicles:['UP54 GH 3456','UP54 IJ 7890','UP54 ST 9753'] },
+  { name:'Green Line Buses',       district:'Prayagraj', fleet:56, schools:18, compliant:48, status:'Compliant', contact:'Ms. S. Mishra',   phone:'9845678901', since:'2018', gst:'09AAKCS7890E1Z7', vehicles:['UP70 IJ 7890','UP70 KL 2345'] },
+  { name:'City Link Transport',    district:'Meerut',    fleet:19, schools:5,  compliant:12, status:'Warning',   contact:'Mr. D. Verma',    phone:'9856789012', since:'2021', gst:'09AALCS2345F1Z5', vehicles:['UP32 QR 4680','UP32 ST 9753'] },
+  { name:'Star Travels UP',        district:'Gorakhpur', fleet:41, schools:14, compliant:36, status:'Compliant', contact:'Mr. K. Yadav',    phone:'9867890123', since:'2019', gst:'09AAMCS6789G1Z3', vehicles:['UP33 AB 1111','UP33 CD 2222'] },
+  { name:'Bharat Bus Co.',         district:'Allahabad', fleet:63, schools:20, compliant:44, status:'Warning',   contact:'Mr. B. Pandey',   phone:'9878901234', since:'2015', gst:'09AANCS0123H1Z1', vehicles:['UP71 EF 3333','UP71 GH 4444'] },
+  { name:'National School Fleet',  district:'Lucknow',   fleet:88, schools:30, compliant:80, status:'Compliant', contact:'Mr. N. Tiwari',   phone:'9889012345', since:'2014', gst:'09AAPCS4567I1Z9', vehicles:['UP32 IJ 5555','UP32 KL 6666'] },
+  { name:'Safe Kids Transport',    district:'Agra',      fleet:22, schools:7,  compliant:10, status:'Violation', contact:'Ms. R. Jain',     phone:'9890123456', since:'2022', gst:'09AAQCS8901J1Z7', vehicles:['UP65 MN 7777','UP65 OP 8888'] },
+];
+
+let filtered = [...vendors];
+
+function badgeHTML(s){
+  const c=s==='Compliant'?'compliant':s==='Warning'?'warning':'violation';
+  return `<span class="badge ${c}"><span class="badge-dot"></span>${s}</span>`;
+}
+function pct(c,f){ return Math.round(c/f*100); }
+function scoreColor(p){ return p>=80?'#2da862':p>=60?'#e67e22':'#e74c3c'; }
+function miniBar(c,f){
+  const p=pct(c,f), col=scoreColor(p);
+  return `<div class="score-wrap">
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:${p}%;background:${col}"></div></div>
+    <span style="font-size:12px;font-weight:600;color:${col}">${p}%</span></div>`;
+}
+
+function renderTable(){
+  document.getElementById('vendorTbody').innerHTML = filtered.map((v,i)=>`
+    <tr onclick="openModal(${i})">
+      <td class="vendor-name">${v.name}</td>
+      <td>${v.district}</td>
+      <td class="fleet-bold">${v.fleet}</td>
+      <td>${v.schools}</td>
+      <td class="compliant-ratio">${v.compliant}/${v.fleet}</td>
+      <td>${miniBar(v.compliant,v.fleet)}</td>
+      <td>${badgeHTML(v.status)}</td>
+    </tr>`).join('');
+  document.getElementById('pageInfo').textContent=`Showing 1–${filtered.length} of 2,341 vendors`;
+}
+
+function filterVendors(){
+  const q=document.getElementById('vendorSearch').value.toLowerCase();
+  const st=document.getElementById('statusFilter').value;
+  const di=document.getElementById('districtFilter').value;
+  filtered=vendors.filter(v=>{
+    const mq=!q||v.name.toLowerCase().includes(q)||v.district.toLowerCase().includes(q);
+    return mq&&(!st||v.status===st)&&(!di||v.district===di);
+  });
+  renderTable();
+}
+
+function openModal(i){
+  const v=filtered[i];
+  const p=pct(v.compliant,v.fleet);
+  const col=scoreColor(p);
+  const nonCompliant=v.fleet-v.compliant;
+  document.getElementById('modalName').textContent=v.name;
+  document.getElementById('modalBadge').innerHTML=badgeHTML(v.status);
+  document.getElementById('modalContent').innerHTML=`
+    <div class="modal-sec-title" style="margin-top:0">Vendor Information</div>
+    <div class="modal-grid">
+      <div class="modal-item"><div class="m-label">District</div><div class="m-val">${v.district}</div></div>
+      <div class="modal-item"><div class="m-label">Operating Since</div><div class="m-val">${v.since}</div></div>
+      <div class="modal-item"><div class="m-label">Contact Person</div><div class="m-val">${v.contact}</div></div>
+      <div class="modal-item"><div class="m-label">Phone</div><div class="m-val">${v.phone}</div></div>
+      <div class="modal-item"><div class="m-label">GST Number</div><div class="m-val" style="font-family:monospace;font-size:11.5px">${v.gst}</div></div>
+      <div class="modal-item"><div class="m-label">Schools Served</div><div class="m-val">${v.schools}</div></div>
+    </div>
+
+    <div class="modal-sec-title">Fleet Compliance Breakdown</div>
+    <div style="background:#f8fafc;border-radius:10px;padding:16px">
+      <div class="fleet-bars">
+        <div class="fb-row">
+          <span class="fb-label">Compliant</span>
+          <div class="fb-bar-bg"><div class="fb-bar-fill" style="width:${p}%;background:#2da862"></div></div>
+          <span class="fb-val" style="color:#2da862">${v.compliant}</span>
+        </div>
+        <div class="fb-row">
+          <span class="fb-label">Non-Compliant</span>
+          <div class="fb-bar-bg"><div class="fb-bar-fill" style="width:${100-p}%;background:#e74c3c"></div></div>
+          <span class="fb-val" style="color:#e74c3c">${nonCompliant}</span>
+        </div>
+        <div class="fb-row">
+          <span class="fb-label">Total Fleet</span>
+          <div class="fb-bar-bg"><div class="fb-bar-fill" style="width:100%;background:#1e3a5f"></div></div>
+          <span class="fb-val">${v.fleet}</span>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:#6b7a90">
+        Overall Compliance: <strong style="color:${col}">${p}%</strong>
+      </div>
+    </div>
+
+    <div class="modal-sec-title">Sample Registered Vehicles</div>
+    <div class="v-chips">
+      ${v.vehicles.map((vn,idx)=>`<span class="v-chip ${idx===0?'ok':idx===2?'bad':''}">${vn}</span>`).join('')}
+      ${v.fleet>v.vehicles.length?`<span class="v-chip">+${v.fleet-v.vehicles.length} more</span>`:''}
+    </div>`;
+  document.getElementById('vendorModal').classList.add('open');
+}
+
+function closeModal(e){
+  if(e.target.id==='vendorModal') document.getElementById('vendorModal').classList.remove('open');
+}
+function openAddVendor(){
+  document.getElementById('addModal').classList.add('open');
+}
+function closeAddModal(e){
+  if(e.target.id==='addModal') document.getElementById('addModal').classList.remove('open');
+}
+
+renderTable();
+</script>
+</body>
+</html>

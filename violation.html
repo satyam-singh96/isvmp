@@ -1,0 +1,489 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Violation Management</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --body-bg: #f8fafc;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--body-bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 28px 28px 48px;
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    flex-wrap: wrap; gap: 14px; margin-bottom: 24px;
+  }
+  .page-title { font-size: 22px; font-weight: 800; color: var(--text-primary); margin-bottom: 3px; }
+  .page-sub   { font-size: 13px; color: var(--text-secondary); }
+
+  .btn-export-report {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--card-bg); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 9px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background 0.15s; white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-export-report:hover { background: var(--body-bg); }
+
+  /* STAT CARDS */
+  .stat-cards {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px; margin-bottom: 28px;
+  }
+  .stat-card {
+    border-radius: var(--radius);
+    padding: 18px 18px 16px;
+    display: flex; flex-direction: column; gap: 6px;
+    position: relative; overflow: hidden; min-width: 0;
+  }
+  .stat-card.total-v  { background: #b91c1c; color: #fff; }
+  .stat-card.open-v   { background: #dc2626; color: #fff; }
+  .stat-card.notice-v { background: #d97706; color: #fff; }
+  .stat-card.resolved-v { background: #15803d; color: #fff; }
+  .stat-card.reduction-v { background: #166534; color: #fff; }
+
+  .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; opacity: 0.85; text-transform: uppercase; }
+  .stat-value { font-size: 32px; font-weight: 800; line-height: 1; }
+  .stat-sub   { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+  .stat-icon {
+    position: absolute; right: 14px; top: 14px;
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* TABS */
+  .tab-row {
+    display: flex; border-bottom: 1px solid var(--border);
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .tab {
+    padding: 10px 18px; font-size: 13px; font-weight: 500;
+    color: var(--text-secondary); cursor: pointer; border: none; background: none;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .tab:hover  { color: var(--text-primary); }
+
+  /* TABLE CARD */
+  .table-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .table-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+  }
+  .table-header-title { font-size: 15px; font-weight: 700; }
+
+  .table-filters {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 12px 20px; border-bottom: 1px solid var(--border);
+  }
+  .search-input-wrap {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--body-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 12px; flex: 1; min-width: 200px;
+  }
+  .search-input-wrap input {
+    border: none; background: none; outline: none;
+    font-size: 13px; color: var(--text-primary); width: 100%;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .filter-select {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 12px; font-size: 13px; color: var(--text-primary);
+    cursor: pointer; background: #fff; font-family: 'DM Sans', sans-serif;
+    outline: none; white-space: nowrap;
+  }
+  .btn-export {
+    display: flex; align-items: center; gap: 6px;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 14px; font-size: 13px; font-weight: 500;
+    background: #fff; cursor: pointer; color: var(--text-primary);
+    transition: background 0.12s; font-family: 'DM Sans', sans-serif;
+    white-space: nowrap;
+  }
+  .btn-export:hover { background: var(--body-bg); }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 900px; }
+  thead th {
+    padding: 12px 14px; font-size: 11px; font-weight: 700;
+    color: var(--text-secondary); text-align: left; letter-spacing: 0.06em;
+    text-transform: uppercase; background: #f8fafc;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f8fafc; }
+  tbody td {
+    padding: 13px 14px; font-size: 13px; color: var(--text-primary);
+    vertical-align: middle; white-space: nowrap;
+  }
+  .id-cell { font-weight: 700; color: var(--accent); font-size: 12px; }
+  .vehicle-cell { font-weight: 600; font-family: 'Space Grotesk', monospace; font-size: 13px; }
+  .violation-cell { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+
+  /* SEVERITY BADGES */
+  .sev {
+    display: inline-flex; align-items: center;
+    padding: 3px 10px; border-radius: 6px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .sev-critical { background: #fee2e2; color: #b91c1c; }
+  .sev-high     { background: #fef3c7; color: #92400e; }
+  .sev-medium   { background: #e0f2fe; color: #0369a1; }
+  .sev-low      { background: #f0fdf4; color: #166534; }
+
+  /* STATUS CHIPS */
+  .status-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; white-space: nowrap;
+  }
+  .status-chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+  .chip-open     { background: #fee2e2; color: #b91c1c; }
+  .chip-open::before     { background: #dc2626; }
+  .chip-notice   { background: #fef3c7; color: #92400e; }
+  .chip-notice::before   { background: #d97706; }
+  .chip-resolved { background: #dcfce7; color: #15803d; }
+  .chip-resolved::before { background: #16a34a; }
+
+  /* ACTION BUTTONS */
+  .btn-issue {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 11px;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    color: var(--text-primary); transition: background 0.12s;
+    font-family: 'DM Sans', sans-serif; white-space: nowrap;
+  }
+  .btn-issue:hover { background: #f1f5f9; }
+
+  .action-sent {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 500; color: var(--text-muted);
+  }
+  .action-resolved-text {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 600; color: #16a34a;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 1100px) {
+    .stat-cards { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 780px) {
+    body { padding: 16px 16px 40px; }
+    .stat-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .stat-value { font-size: 24px; }
+    .page-title { font-size: 18px; }
+    .table-filters { flex-direction: column; align-items: stretch; }
+    .search-input-wrap { min-width: 100%; }
+  }
+  @media (max-width: 520px) {
+    .stat-cards { grid-template-columns: 1fr 1fr; }
+    .page-header { flex-direction: column; }
+    .table-header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Violation Management</div>
+      <div class="page-sub">Track, issue notices &amp; manage safety violations across districts</div>
+    </div>
+    <button class="btn-export-report">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export Report
+    </button>
+  </div>
+
+  <!-- STAT CARDS -->
+  <div class="stat-cards">
+    <div class="stat-card total-v">
+      <div class="stat-label">Total Violations</div>
+      <div class="stat-value">1,847</div>
+      <div class="stat-icon">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+    </div>
+    <div class="stat-card open-v">
+      <div class="stat-label">Open</div>
+      <div class="stat-value">826</div>
+      <div class="stat-icon">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+    </div>
+    <div class="stat-card notice-v">
+      <div class="stat-label">Notice Issued</div>
+      <div class="stat-value">577</div>
+      <div class="stat-icon">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+    </div>
+    <div class="stat-card resolved-v">
+      <div class="stat-label">Resolved</div>
+      <div class="stat-value">444</div>
+      <div class="stat-icon">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+    </div>
+    <div class="stat-card reduction-v">
+      <div class="stat-label">Reduction</div>
+      <div class="stat-value">-39%</div>
+      <div class="stat-sub">vs Oct 2025</div>
+      <div class="stat-icon">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-row">
+    <button class="tab active" onclick="setTab(this)">All Violations</button>
+    <button class="tab" onclick="setTab(this)">
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Notices
+    </button>
+    <button class="tab" onclick="setTab(this)">
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Reports &amp; Analytics
+    </button>
+  </div>
+
+  <!-- TABLE CARD -->
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-header-title">Violation Records</div>
+      <button class="btn-export">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+    </div>
+
+    <div class="table-filters">
+      <div class="search-input-wrap">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search ID, vehicle, school, type..."/>
+      </div>
+      <select class="filter-select">
+        <option>All Status</option>
+        <option>Open</option>
+        <option>Notice Issued</option>
+        <option>Resolved</option>
+      </select>
+      <select class="filter-select">
+        <option>All Districts</option>
+        <option>Lucknow</option>
+        <option>Kanpur</option>
+        <option>Agra</option>
+        <option>Varanasi</option>
+        <option>Prayagraj</option>
+        <option>Meerut</option>
+      </select>
+      <select class="filter-select">
+        <option>All Severity</option>
+        <option>Critical</option>
+        <option>High</option>
+        <option>Medium</option>
+        <option>Low</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Vehicle</th>
+            <th>School</th>
+            <th>Violation</th>
+            <th>Severity</th>
+            <th>District</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="id-cell">VIO-2026-001</td>
+            <td class="vehicle-cell">UP32 AB 1234</td>
+            <td>DPS Lucknow</td>
+            <td class="violation-cell">Speed Governor Missing</td>
+            <td><span class="sev sev-critical">Critical</span></td>
+            <td>Lucknow</td>
+            <td>2026-03-14</td>
+            <td><span class="status-chip chip-open">Open</span></td>
+            <td>
+              <button class="btn-issue">
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Issue Notice
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td class="id-cell">VIO-2026-002</td>
+            <td class="vehicle-cell">UP78 CD 5678</td>
+            <td>City Montessori</td>
+            <td class="violation-cell">Expired Fitness Certificate</td>
+            <td><span class="sev sev-critical">Critical</span></td>
+            <td>Kanpur</td>
+            <td>2026-03-14</td>
+            <td><span class="status-chip chip-open">Open</span></td>
+            <td>
+              <button class="btn-issue">
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Issue Notice
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td class="id-cell">VIO-2026-003</td>
+            <td class="vehicle-cell">UP65 EF 9012</td>
+            <td>St. Xavier's</td>
+            <td class="violation-cell">No Fire Extinguisher</td>
+            <td><span class="sev sev-high">High</span></td>
+            <td>Agra</td>
+            <td>2026-03-13</td>
+            <td><span class="status-chip chip-notice">Notice Issued</span></td>
+            <td><span class="action-sent">Notice Sent</span></td>
+          </tr>
+          <tr>
+            <td class="id-cell">VIO-2026-004</td>
+            <td class="vehicle-cell">UP54 GH 3456</td>
+            <td>Army Public School</td>
+            <td class="violation-cell">GPS Malfunction</td>
+            <td><span class="sev sev-medium">Medium</span></td>
+            <td>Varanasi</td>
+            <td>2026-03-13</td>
+            <td><span class="status-chip chip-open">Open</span></td>
+            <td>
+              <button class="btn-issue">
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Issue Notice
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td class="id-cell">VIO-2026-005</td>
+            <td class="vehicle-cell">UP70 IJ 7890</td>
+            <td>Delhi Public School</td>
+            <td class="violation-cell">No First Aid Kit</td>
+            <td><span class="sev sev-medium">Medium</span></td>
+            <td>Prayagraj</td>
+            <td>2026-03-12</td>
+            <td><span class="status-chip chip-resolved">Resolved</span></td>
+            <td><span class="action-resolved-text">✓ Resolved</span></td>
+          </tr>
+          <tr>
+            <td class="id-cell">VIO-2026-006</td>
+            <td class="vehicle-cell">UP32 KL 2345</td>
+            <td>GD Goenka</td>
+            <td class="violation-cell">No CCTV</td>
+            <td><span class="sev sev-high">High</span></td>
+            <td>Lucknow</td>
+            <td>2026-03-11</td>
+            <td><span class="status-chip chip-open">Open</span></td>
+            <td>
+              <button class="btn-issue">
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Issue Notice
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td class="id-cell">VIO-2026-007</td>
+            <td class="vehicle-cell">UP14 MN 4567</td>
+            <td>Modern Academy</td>
+            <td class="violation-cell">No Attendant Present</td>
+            <td><span class="sev sev-critical">Critical</span></td>
+            <td>Meerut</td>
+            <td>2026-03-10</td>
+            <td><span class="status-chip chip-notice">Notice Issued</span></td>
+            <td><span class="action-sent">Notice Sent</span></td>
+          </tr>
+          <tr>
+            <td class="id-cell">VIO-2026-008</td>
+            <td class="vehicle-cell">UP78 OP 8901</td>
+            <td>Ryan International</td>
+            <td class="violation-cell">Window Rods Gap &gt; 5cm</td>
+            <td><span class="sev sev-high">High</span></td>
+            <td>Kanpur</td>
+            <td>2026-03-09</td>
+            <td><span class="status-chip chip-resolved">Resolved</span></td>
+            <td><span class="action-resolved-text">✓ Resolved</span></td>
+          </tr>
+          <tr>
+            <td class="id-cell">VIO-2026-009</td>
+            <td class="vehicle-cell">UP32 QR 5432</td>
+            <td>Kendriya Vidyalaya</td>
+            <td class="violation-cell">Emergency Exit Jammed</td>
+            <td><span class="sev sev-critical">Critical</span></td>
+            <td>Lucknow</td>
+            <td>2026-03-08</td>
+            <td><span class="status-chip chip-open">Open</span></td>
+            <td>
+              <button class="btn-issue">
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Issue Notice
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td class="id-cell">VIO-2026-010</td>
+            <td class="vehicle-cell">UP65 ST 7654</td>
+            <td>Cambridge School</td>
+            <td class="violation-cell">Expired Insurance</td>
+            <td><span class="sev sev-high">High</span></td>
+            <td>Agra</td>
+            <td>2026-03-07</td>
+            <td><span class="status-chip chip-notice">Notice Issued</span></td>
+            <td><span class="action-sent">Notice Sent</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+  function setTab(el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,407 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Alerts & Notifications</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#2563eb;--body-bg:#f8fafc;--card-bg:#fff;--border:#e2e8f0;
+  --text-primary:#0f172a;--text-secondary:#64748b;--text-muted:#94a3b8;
+  --radius:12px;--radius-sm:8px;
+  --red:#dc2626;--orange:#d97706;--green:#15803d;--navy:#1e3a5f;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--body-bg);color:var(--text-primary);min-height:100vh;padding:28px 28px 56px}
+
+/* PAGE HEADER */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px}
+.page-title{font-size:22px;font-weight:800;margin-bottom:3px}
+.page-sub{font-size:13px;color:var(--text-secondary)}
+.compliance-btn{display:flex;align-items:center;gap:7px;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-primary);font-family:'DM Sans',sans-serif;transition:background .15s;white-space:nowrap}
+.compliance-btn:hover{background:var(--body-bg)}
+
+/* STAT CARDS */
+.stat-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px}
+.stat-card{border-radius:var(--radius);padding:20px 18px 16px;position:relative;overflow:hidden;min-width:0;cursor:pointer;transition:filter .15s}
+.stat-card:hover{filter:brightness(.97)}
+.stat-card.critical   {background:#b91c1c;color:#fff}
+.stat-card.warnings   {background:#d97706;color:#fff}
+.stat-card.unread     {background:#1e3a5f;color:#fff}
+.stat-card.acknowledged{background:var(--card-bg);border:1px solid var(--border)}
+.stat-card.resolved   {background:#15803d;color:#fff}
+.s-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.stat-card.acknowledged .s-label{color:var(--text-secondary);opacity:1}
+.s-value{font-size:36px;font-weight:800;line-height:1;margin-top:5px}
+.stat-card.acknowledged .s-value{color:var(--text-primary)}
+.s-icon{position:absolute;right:14px;top:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
+.stat-card.acknowledged .s-icon{background:#f1f5f9}
+
+/* INFO BANNER */
+.info-banner{display:flex;align-items:flex-start;gap:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:20px;font-size:12px;color:#92400e;line-height:1.5}
+.info-banner svg{flex-shrink:0;margin-top:1px;color:#d97706}
+
+/* TABS */
+.tab-row{display:flex;border-bottom:1px solid var(--border);margin-bottom:18px;flex-wrap:wrap}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s;font-family:'DM Sans',sans-serif}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.tab:hover{color:var(--text-primary)}
+
+/* FILTER ROW */
+.filter-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.search-wrap{display:flex;align-items:center;gap:8px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:200px;flex:1;max-width:280px}
+.search-wrap input{border:none;background:none;outline:none;font-size:13px;color:var(--text-primary);width:100%;font-family:'DM Sans',sans-serif}
+.filter-select{border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text-primary);cursor:pointer;background:var(--card-bg);font-family:'DM Sans',sans-serif;outline:none}
+
+/* ALERTS LIST */
+.alerts-list{display:flex;flex-direction:column;gap:0;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+
+.alert-item{display:flex;align-items:flex-start;gap:14px;padding:16px 20px;border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer;position:relative}
+.alert-item:last-child{border-bottom:none}
+.alert-item:hover{background:#fafbfc}
+.alert-item.critical-bg{background:#fff8f8}
+.alert-item.warning-bg {background:#fffdf5}
+.alert-item.info-bg    {background:#f8faff}
+.alert-item.resolved-bg{background:#f0fdf4}
+.alert-item.critical-bg:hover{background:#fff1f1}
+.alert-item.warning-bg:hover {background:#fff8e6}
+
+/* Alert icon */
+.alert-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.icon-critical{background:#fee2e2}
+.icon-warning {background:#fef3c7}
+.icon-info    {background:#dbeafe}
+.icon-resolved{background:#dcfce7}
+
+/* Alert body */
+.alert-body{flex:1;min-width:0}
+.alert-title-row{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-bottom:4px}
+.alert-title{font-size:14px;font-weight:700}
+
+/* Status + category badges */
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.badge-new        {background:#fee2e2;color:#b91c1c}
+.badge-acknowledged{background:#fef3c7;color:#92400e}
+.badge-resolved   {background:#dcfce7;color:#15803d}
+
+.cat-badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.cat-safety      {background:#ede9fe;color:#5b21b6}
+.cat-doc-expiry  {background:#fef3c7;color:#92400e}
+.cat-inspection  {background:#dbeafe;color:#1d4ed8}
+.cat-compliance  {background:#dcfce7;color:#15803d}
+.cat-system      {background:#f1f5f9;color:#475569}
+.cat-driver      {background:#fff7ed;color:#c2410c}
+
+.alert-desc{font-size:12px;color:var(--text-secondary);margin-bottom:8px;line-height:1.5}
+
+/* Channel + location row */
+.alert-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.channel-chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--text-secondary);background:var(--body-bg);border:1px solid var(--border);border-radius:5px;padding:2px 7px;white-space:nowrap}
+.loc-chip{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:500;color:var(--text-secondary);white-space:nowrap}
+.escalate-chip{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--red);white-space:nowrap}
+
+/* Right meta */
+.alert-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;min-width:90px}
+.alert-time{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;white-space:nowrap}
+.alert-id  {font-size:10px;color:var(--text-muted);font-family:'Space Grotesk',monospace}
+
+/* RESPONSIVE */
+@media(max-width:1050px){.stat-cards{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:780px){
+  body{padding:16px 16px 40px}
+  .page-title{font-size:18px}
+  .stat-cards{grid-template-columns:repeat(2,1fr);gap:10px}
+  .s-value{font-size:28px}
+  .page-header{flex-direction:column}
+  .alert-right{min-width:auto}
+}
+@media(max-width:480px){
+  .stat-cards{grid-template-columns:1fr 1fr}
+  .filter-row{flex-direction:column;align-items:stretch}
+  .search-wrap{max-width:100%}
+  .alert-item{flex-wrap:wrap}
+  .alert-right{width:100%;flex-direction:row;justify-content:space-between;align-items:center;margin-top:6px}
+}
+</style>
+</head>
+<body>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div>
+    <div class="page-title">Alerts &amp; Notifications</div>
+    <div class="page-sub">8 unresolved alerts — Automated 30-day expiry tracking active</div>
+  </div>
+  <button class="compliance-btn">
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    Compliance
+  </button>
+</div>
+
+<!-- STAT CARDS -->
+<div class="stat-cards">
+  <div class="stat-card critical">
+    <div class="s-label">Critical</div>
+    <div class="s-value">4</div>
+    <div class="s-icon">
+      <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+  </div>
+  <div class="stat-card warnings">
+    <div class="s-label">Warnings</div>
+    <div class="s-value">7</div>
+    <div class="s-icon">
+      <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+  </div>
+  <div class="stat-card unread">
+    <div class="s-label">New / Unread</div>
+    <div class="s-value">8</div>
+    <div class="s-icon">
+      <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    </div>
+  </div>
+  <div class="stat-card acknowledged">
+    <div class="s-label">Acknowledged</div>
+    <div class="s-value">3</div>
+    <div class="s-icon">
+      <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+  </div>
+  <div class="stat-card resolved">
+    <div class="s-label">Resolved Today</div>
+    <div class="s-value">2</div>
+    <div class="s-icon">
+      <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- INFO BANNER -->
+<div class="info-banner">
+  <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+  <span>Automated alerts notify stakeholders via SMS, Email &amp; Portal when fitness, insurance, permit, PUC or DL are within 30 days of expiry. Critical alerts auto-escalate to DM after 48 hours if unresolved.</span>
+</div>
+
+<!-- TABS -->
+<div class="tab-row">
+  <button class="tab active" onclick="setTab(this,'all')">All Alerts</button>
+  <button class="tab" onclick="setTab(this,'doc')">Document Expiry</button>
+  <button class="tab" onclick="setTab(this,'safety')">Safety</button>
+  <button class="tab" onclick="setTab(this,'rules')">Escalation Rules</button>
+</div>
+
+<!-- FILTER ROW -->
+<div class="filter-row">
+  <div class="search-wrap">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" placeholder="Search alerts..." oninput="filterAlerts(this.value)"/>
+  </div>
+  <select class="filter-select" onchange="filterStatus(this.value)">
+    <option value="all">All Status</option>
+    <option value="new">New</option>
+    <option value="acknowledged">Acknowledged</option>
+    <option value="resolved">Resolved</option>
+  </select>
+  <select class="filter-select" onchange="filterDistrict(this.value)">
+    <option value="all">All Districts</option>
+    <option>Lucknow</option><option>Agra</option><option>Meerut</option>
+    <option>Kanpur</option><option>Gorakhpur</option><option>Varanasi</option>
+    <option>Prayagraj</option>
+  </select>
+</div>
+
+<!-- ALERTS LIST -->
+<div class="alerts-list" id="alertsList"></div>
+
+<script>
+const alerts = [
+  {
+    id:'ALR-1042', status:'new', cat:'safety', bg:'critical-bg', icon:'critical',
+    title:'Speed Governor Missing',
+    desc:'Bus UP32 AB 1234 - DPS Lucknow reported without speed governor',
+    channels:['SMS','Portal'], district:'Lucknow', escalate:null,
+    time:'5 min ago'
+  },
+  {
+    id:'ALR-1041', status:'new', cat:'doc', bg:'warning-bg', icon:'warning',
+    title:'Fitness Certificate Expiring in 7 Days',
+    desc:'Bus UP78 CD 5678 fitness certificate expires on March 22',
+    channels:['SMS','Email','Portal'], district:'Agra', escalate:'RTO Agra',
+    time:'12 min ago'
+  },
+  {
+    id:'ALR-1040', status:'acknowledged', cat:'inspection', bg:'warning-bg', icon:'warning',
+    title:'Inspection Overdue — 15 Buses',
+    desc:'15 buses in Meerut district have overdue inspections (>30 days)',
+    channels:['Portal','Email'], district:'Meerut', escalate:'DM Meerut',
+    time:'1 hour ago'
+  },
+  {
+    id:'ALR-1039', status:'new', cat:'doc', bg:'warning-bg', icon:'warning',
+    title:'Insurance Expiring in 15 Days',
+    desc:'Bus UP65 OP 1357 insurance expires on March 31',
+    channels:['SMS','Email','Portal'], district:'Kanpur', escalate:null,
+    time:'2 hours ago'
+  },
+  {
+    id:'ALR-1038', status:'acknowledged', cat:'safety', bg:'warning-bg', icon:'warning',
+    title:'GPS Malfunction — No Signal 6hrs',
+    desc:'Bus UP54 GH 3456 GPS not transmitting data since 8:00 AM',
+    channels:['SMS','Portal'], district:'Lucknow', escalate:null,
+    time:'3 hours ago'
+  },
+  {
+    id:'ALR-1037', status:'new', cat:'doc', bg:'warning-bg', icon:'warning',
+    title:'Permit Expiring in 25 Days',
+    desc:'Bus UP32 KL 2345 permit expires on April 10',
+    channels:['Email','Portal'], district:'Lucknow', escalate:null,
+    time:'3.5 hours ago'
+  },
+  {
+    id:'ALR-1036', status:'acknowledged', cat:'compliance', bg:'critical-bg', icon:'critical',
+    title:'Non-Compliance: 12 Schools Below 70%',
+    desc:'12 schools in Gorakhpur district below 70% compliance — escalated to DM',
+    channels:['SMS','Email','Portal'], district:'Gorakhpur', escalate:'DM Gorakhpur',
+    time:'4 hours ago'
+  },
+  {
+    id:'ALR-1035', status:'new', cat:'inspection', bg:'warning-bg', icon:'warning',
+    title:'Vehicle Marked Unfit — Re-Inspection Pending',
+    desc:'Bus UP78 CD 5678 requires re-inspection after corrective action',
+    channels:['SMS','Portal'], district:'Agra', escalate:null,
+    time:'4.5 hours ago'
+  },
+  {
+    id:'ALR-1034', status:'new', cat:'safety', bg:'critical-bg', icon:'critical',
+    title:'CCTV Not Functional — 8 Buses',
+    desc:'8 buses across Varanasi reported non-functional CCTV cameras',
+    channels:['SMS','Email','Portal'], district:'Varanasi', escalate:null,
+    time:'5 hours ago'
+  },
+  {
+    id:'ALR-1033', status:'resolved', cat:'system', bg:'resolved-bg', icon:'resolved',
+    title:'New Vendor Registration',
+    desc:'Metro Transport Services applied for vendor registration in Lucknow',
+    channels:['Portal'], district:'Lucknow', escalate:null,
+    time:'5 hours ago'
+  },
+  {
+    id:'ALR-1032', status:'new', cat:'doc', bg:'warning-bg', icon:'warning',
+    title:'PUC Certificate Expiring in 20 Days',
+    desc:'Bus UP54 QR 2468 PUC expires on April 5',
+    channels:['Email','Portal'], district:'Kanpur', escalate:null,
+    time:'5.5 hours ago'
+  },
+  {
+    id:'ALR-1031', status:'resolved', cat:'inspection', bg:'resolved-bg', icon:'resolved',
+    title:'Batch Inspection Completed — Agra',
+    desc:'23 buses inspected in Agra — 20 Fit, 3 Unfit',
+    channels:['Portal'], district:'Agra', escalate:null,
+    time:'6 hours ago'
+  },
+  {
+    id:'ALR-1030', status:'new', cat:'driver', bg:'warning-bg', icon:'warning',
+    title:'Driver License Expiring — 14 Drivers',
+    desc:'14 drivers across Prayagraj have DLs expiring within 30 days',
+    channels:['SMS','Email','Portal'], district:'Prayagraj', escalate:null,
+    time:'7 hours ago'
+  },
+];
+
+// icons
+const icons = {
+  critical: `<div class="alert-icon icon-critical"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#dc2626" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>`,
+  warning:  `<div class="alert-icon icon-warning"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#d97706" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>`,
+  info:     `<div class="alert-icon icon-info"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#2563eb" stroke-width="2.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div>`,
+  resolved: `<div class="alert-icon icon-resolved"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#15803d" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>`,
+};
+
+const statusBadge = {
+  new:          `<span class="badge badge-new">New</span>`,
+  acknowledged: `<span class="badge badge-acknowledged">Acknowledged</span>`,
+  resolved:     `<span class="badge badge-resolved">Resolved</span>`,
+};
+
+const catBadge = {
+  safety:     `<span class="cat-badge cat-safety">Safety</span>`,
+  doc:        `<span class="cat-badge cat-doc-expiry">Document Expiry</span>`,
+  inspection: `<span class="cat-badge cat-inspection">Inspection</span>`,
+  compliance: `<span class="cat-badge cat-safety" style="background:#dcfce7;color:#15803d">Compliance</span>`,
+  system:     `<span class="cat-badge cat-system">System</span>`,
+  driver:     `<span class="cat-badge cat-driver">Driver</span>`,
+};
+
+const channelIcon = {
+  SMS:    `<svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8l10 6 10-6"/></svg>`,
+  Email:  `<svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.82 19.79 19.79 0 01.1 1.18 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.56-.56a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0120.28 15a2 2 0 011.64 1.92z"/></svg>`,
+  Portal: `<svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>`,
+};
+
+let searchQ = '', statusF = 'all', districtF = 'all', tabF = 'all';
+
+function renderAlerts() {
+  const list = document.getElementById('alertsList');
+  let filtered = alerts.filter(a => {
+    const sq = a.title.toLowerCase().includes(searchQ.toLowerCase()) ||
+               a.desc.toLowerCase().includes(searchQ.toLowerCase());
+    const sf = statusF === 'all' || a.status === statusF;
+    const df = districtF === 'all' || a.district === districtF;
+    const tf = tabF === 'all' ||
+               (tabF === 'doc' && a.cat === 'doc') ||
+               (tabF === 'safety' && a.cat === 'safety') ||
+               (tabF === 'rules');
+    return sq && sf && df && tf;
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:13px">No alerts found</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(a => `
+    <div class="alert-item ${a.bg}">
+      ${icons[a.icon]}
+      <div class="alert-body">
+        <div class="alert-title-row">
+          <span class="alert-title">${a.title}</span>
+          ${statusBadge[a.status]}
+          ${catBadge[a.cat] || ''}
+        </div>
+        <div class="alert-desc">${a.desc}</div>
+        <div class="alert-meta">
+          ${a.channels.map(c => `<span class="channel-chip">${channelIcon[c]||''} ${c}</span>`).join('')}
+          <span class="loc-chip">
+            <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            ${a.district}
+          </span>
+          ${a.escalate ? `<span class="escalate-chip">→ ${a.escalate}</span>` : ''}
+        </div>
+      </div>
+      <div class="alert-right">
+        <span class="alert-time">
+          <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          ${a.time}
+        </span>
+        <span class="alert-id">${a.id}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterAlerts(q)  { searchQ = q; renderAlerts(); }
+function filterStatus(v)  { statusF = v; renderAlerts(); }
+function filterDistrict(v){ districtF = v; renderAlerts(); }
+
+function setTab(el, tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  tabF = tab;
+  renderAlerts();
+}
+
+renderAlerts();
+</script>
+</body>
+</html>

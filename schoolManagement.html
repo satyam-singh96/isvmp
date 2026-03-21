@@ -1,0 +1,323 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>School Management – ISVMP</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#f4f6f9;color:#1a2332;padding:24px 28px;min-height:100vh}
+
+/* ── HEADER ── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;margin-bottom:22px}
+.page-header h1{font-size:22px;font-weight:700;color:#1a2332}
+.page-header p{font-size:12.5px;color:#6b7a90;margin-top:3px}
+.btn-primary{background:#1e3a5f;color:#fff;border:none;border-radius:9px;
+  padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;
+  font-family:inherit;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-primary:hover{background:#2563a8}
+
+/* ── STAT CARDS ── */
+.stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-card{border-radius:12px;padding:20px 18px;position:relative;overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.stat-card.blue  {background:linear-gradient(135deg,#1e3a5f,#2563a8);color:#fff}
+.stat-card.grey  {background:#fff;color:#1a2332;border:1px solid #e8ecf1}
+.stat-card.green {background:linear-gradient(135deg,#1a7a4a,#2da862);color:#fff}
+.stat-card.red   {background:linear-gradient(135deg,#991b1b,#dc2626);color:#fff}
+.stat-card .s-label{font-size:10.5px;font-weight:600;letter-spacing:.4px;
+  text-transform:uppercase;opacity:.82;margin-bottom:9px;line-height:1.3}
+.stat-card.grey .s-label{color:#6b7a90;opacity:1}
+.stat-card .s-val{font-size:32px;font-weight:700;line-height:1}
+.stat-card .s-icon{position:absolute;top:14px;right:14px;font-size:22px;opacity:.2}
+
+/* ── SECTION CARD ── */
+.section-card{background:#fff;border-radius:13px;padding:22px 24px;
+  box-shadow:0 1px 4px rgba(0,0,0,.06)}
+
+/* ── TABLE TOOLBAR ── */
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.toolbar-left{font-size:15px;font-weight:600;color:#1a2332}
+.toolbar-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.search-input{
+  border:1px solid #dde3ec;border-radius:8px;padding:7px 12px 7px 32px;
+  font-size:13px;color:#1a2332;outline:none;
+  background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24'%3E%3Cpath d='M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z' stroke='%236b7a90' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 10px center;
+  width:220px;font-family:inherit}
+.filter-select{
+  border:1px solid #dde3ec;border-radius:8px;padding:7px 28px 7px 11px;
+  font-size:13px;color:#1a2332;outline:none;background:#f8fafc;
+  appearance:none;cursor:pointer;font-family:inherit;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%236b7a90' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:700px}
+thead th{font-size:10.5px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
+  color:#8fa0b4;text-align:left;padding:9px 12px;border-bottom:1px solid #f0f3f7;white-space:nowrap}
+tbody tr{border-bottom:1px solid #f4f6f9;cursor:pointer;transition:background .15s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f8fafc}
+tbody td{padding:13px 12px;font-size:13px;color:#1a2332;vertical-align:middle}
+
+.school-name{font-weight:600;color:#1e3a5f;text-decoration:none}
+.school-name:hover{text-decoration:underline}
+.udise{font-family:monospace;font-size:11.5px;color:#6b7a90}
+.num-cell{font-weight:600;text-align:center}
+
+/* score bar */
+.score-wrap{display:flex;align-items:center;gap:7px}
+.score-bar-bg{width:52px;height:5px;background:#e8ecf1;border-radius:3px;overflow:hidden;flex-shrink:0}
+.score-bar-fill{height:100%;border-radius:3px}
+.score-txt{font-size:12px;font-weight:600;min-width:30px}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;
+  border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-dot{width:6px;height:6px;border-radius:50%}
+.badge.compliant{background:#e8f9ef;color:#1a7a4a}.badge.compliant .badge-dot{background:#2da862}
+.badge.warning  {background:#fef3e2;color:#a05a00}.badge.warning   .badge-dot{background:#e67e22}
+.badge.violation{background:#fdecea;color:#c0392b}.badge.violation .badge-dot{background:#e74c3c}
+
+/* pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid #f0f3f7}
+.page-info{font-size:12px;color:#8fa0b4}
+.page-btns{display:flex;gap:4px}
+.page-btn{border:1px solid #dde3ec;background:#fff;border-radius:6px;
+  width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;cursor:pointer;color:#1a2332;font-family:inherit;transition:.15s}
+.page-btn:hover{background:#f4f6f9}
+.page-btn.active{background:#1e3a5f;color:#fff;border-color:#1e3a5f}
+
+/* school detail modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);
+  z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:580px;
+  max-height:90vh;overflow-y:auto;padding:28px;box-shadow:0 10px 40px rgba(0,0,0,.18)}
+.modal-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.modal-header h2{font-size:18px;font-weight:700}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#6b7a90;line-height:1}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-item{background:#f8fafc;border-radius:8px;padding:12px 14px}
+.modal-item .m-label{font-size:10.5px;color:#8fa0b4;font-weight:600;
+  text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.modal-item .m-val{font-size:13px;font-weight:600;color:#1a2332}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .stat-cards{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+  body{padding:14px}
+  .stat-cards{grid-template-columns:repeat(2,1fr)}
+  .stat-card .s-val{font-size:24px}
+  .section-card{padding:14px}
+  .search-input{width:100%}
+  .toolbar-right{width:100%}
+  .search-input,.filter-select{flex:1}
+  .page-header h1{font-size:18px}
+  .modal-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ── PAGE HEADER ── -->
+<div class="page-header">
+  <div>
+    <h1>School Management</h1>
+    <p>School-owned &amp; affiliated vehicle monitoring</p>
+  </div>
+  <button class="btn-primary" onclick="alert('Register School form coming soon!')">＋ Register School</button>
+</div>
+
+<!-- ── STAT CARDS ── -->
+<div class="stat-cards">
+  <div class="stat-card blue">
+    <div class="s-label">Total Schools</div>
+    <div class="s-val">24,856</div>
+    <div class="s-icon">🏫</div>
+  </div>
+  <div class="stat-card grey">
+    <div class="s-label" style="color:#6b7a90">With Vehicles</div>
+    <div class="s-val">18,432</div>
+    <div class="s-icon" style="opacity:.25">🚌</div>
+  </div>
+  <div class="stat-card green">
+    <div class="s-label">Compliant</div>
+    <div class="s-val">14,890</div>
+    <div class="s-icon">🛡️</div>
+  </div>
+  <div class="stat-card red">
+    <div class="s-label">Non-Compliant</div>
+    <div class="s-val">3,542</div>
+    <div class="s-icon">⚠️</div>
+  </div>
+</div>
+
+<!-- ── TABLE SECTION ── -->
+<div class="section-card">
+  <div class="table-toolbar">
+    <div class="toolbar-left">All Schools</div>
+    <div class="toolbar-right">
+      <input class="search-input" type="text" placeholder="Search by name or UDISE..." id="schoolSearch" oninput="filterTable()"/>
+      <select class="filter-select" id="statusFilter" onchange="filterTable()">
+        <option value="">All Status</option>
+        <option value="Compliant">Compliant</option>
+        <option value="Warning">Warning</option>
+        <option value="Violation">Violation</option>
+      </select>
+      <select class="filter-select" id="districtFilter" onchange="filterTable()">
+        <option value="">All Districts</option>
+        <option value="Lucknow">Lucknow</option>
+        <option value="Agra">Agra</option>
+        <option value="Varanasi">Varanasi</option>
+        <option value="Prayagraj">Prayagraj</option>
+        <option value="Kanpur">Kanpur</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="schoolTable">
+      <thead>
+        <tr>
+          <th>School Name</th>
+          <th>UDISE Code</th>
+          <th>Block / Thana</th>
+          <th>District</th>
+          <th style="text-align:center">Owned</th>
+          <th style="text-align:center">Affiliated</th>
+          <th>Transport Coordinator</th>
+          <th>Compliance</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="schoolTbody">
+        <!-- rows injected by JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <div class="page-info" id="pageInfo">Showing 1–8 of 24,856 schools</div>
+    <div class="page-btns">
+      <button class="page-btn">‹</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <button class="page-btn">…</button>
+      <button class="page-btn">3107</button>
+      <button class="page-btn">›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCHOOL DETAIL MODAL ── -->
+<div class="modal-overlay" id="schoolModal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalName">Delhi Public School</h2>
+        <div id="modalBadge" style="margin-top:6px"></div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('schoolModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-grid" id="modalGrid"></div>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-primary" style="font-size:12px;padding:7px 14px"
+        onclick="window.location.href='school-dashboard.html'">View Full Dashboard →</button>
+      <button class="btn-primary" style="font-size:12px;padding:7px 14px;background:#f4f6f9;color:#1a2332"
+        onclick="document.getElementById('schoolModal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const schools = [
+  { name:'Delhi Public School',    udise:'09101234567', block:'Sadar',           thana:'Sadar',         district:'Lucknow',   owned:12, aff:4,  coord:'Mr. A.K. Gupta',  score:94, status:'Compliant' },
+  { name:'City Montessori School', udise:'09101234568', block:'Gomti Nagar',     thana:'Gomti Nagar',   district:'Lucknow',   owned:28, aff:12, coord:'Mrs. S. Verma',   score:67, status:'Warning'   },
+  { name:"St. Xavier's College",   udise:'09201234567', block:'Civil Lines',     thana:'Sadar',         district:'Agra',      owned:8,  aff:3,  coord:'Fr. Thomas',      score:42, status:'Violation' },
+  { name:'Army Public School',     udise:'09301234567', block:'Cantonment',      thana:'Cantonment',    district:'Varanasi',  owned:6,  aff:0,  coord:'Col. R. Singh',   score:91, status:'Compliant' },
+  { name:'Kendriya Vidyalaya',     udise:'09401234567', block:'Sector 12',       thana:'Civil Lines',   district:'Prayagraj', owned:4,  aff:2,  coord:'Mr. P. Kumar',    score:88, status:'Compliant' },
+  { name:'Ryan International',     udise:'09501234567', block:'Swaroop Nagar',   thana:'Kanpur Central',district:'Kanpur',    owned:15, aff:8,  coord:'Ms. R. Sharma',   score:55, status:'Violation' },
+  { name:'GD Goenka Public School',udise:'09101234569', block:'Aliganj',         thana:'Aliganj',       district:'Lucknow',   owned:10, aff:5,  coord:'Dr. M. Gupta',    score:78, status:'Warning'   },
+  { name:'Modern Academy',         udise:'09101234570', block:'Daliganj',        thana:'Hazratganj',    district:'Lucknow',   owned:7,  aff:2,  coord:'Mr. V. Tiwari',   score:96, status:'Compliant' },
+  { name:'Lal Bahadur Shastri School',udise:'09601234567',block:'Phoolbagh',     thana:'Phoolbagh',     district:'Kanpur',    owned:5,  aff:1,  coord:'Mr. S. Mishra',   score:82, status:'Compliant' },
+  { name:'Sunbeam School',         udise:'09701234567', block:'Sigra',           thana:'Sigra',         district:'Varanasi',  owned:9,  aff:3,  coord:'Mrs. A. Singh',   score:73, status:'Warning'   },
+];
+
+function badgeHTML(status){
+  const cls = status==='Compliant'?'compliant':status==='Warning'?'warning':'violation';
+  return `<span class="badge ${cls}"><span class="badge-dot"></span>${status}</span>`;
+}
+function scoreHTML(score){
+  const color = score>=80?'#2da862':score>=60?'#e67e22':'#e74c3c';
+  return `<div class="score-wrap">
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:${score}%;background:${color}"></div></div>
+    <span class="score-txt" style="color:${color}">${score}%</span>
+  </div>`;
+}
+
+let filtered = [...schools];
+
+function renderTable(){
+  const tbody = document.getElementById('schoolTbody');
+  tbody.innerHTML = filtered.map((s,i)=>`
+    <tr onclick="openModal(${i})">
+      <td><a class="school-name" href="school-dashboard.html" onclick="event.stopPropagation()">${s.name}</a></td>
+      <td class="udise">${s.udise}</td>
+      <td>${s.block} / ${s.thana}</td>
+      <td>${s.district}</td>
+      <td class="num-cell">${s.owned}</td>
+      <td class="num-cell">${s.aff}</td>
+      <td style="font-size:13px">${s.coord}</td>
+      <td>${scoreHTML(s.score)}</td>
+      <td>${badgeHTML(s.status)}</td>
+    </tr>`).join('');
+  document.getElementById('pageInfo').textContent =
+    `Showing 1–${filtered.length} of 24,856 schools`;
+}
+
+function filterTable(){
+  const q  = document.getElementById('schoolSearch').value.toLowerCase();
+  const st = document.getElementById('statusFilter').value;
+  const di = document.getElementById('districtFilter').value;
+  filtered = schools.filter(s=>{
+    const matchQ  = !q  || s.name.toLowerCase().includes(q) || s.udise.includes(q);
+    const matchSt = !st || s.status===st;
+    const matchDi = !di || s.district===di;
+    return matchQ && matchSt && matchDi;
+  });
+  renderTable();
+}
+
+function openModal(idx){
+  const s = filtered[idx];
+  document.getElementById('modalName').textContent = s.name;
+  document.getElementById('modalBadge').innerHTML  = badgeHTML(s.status);
+  document.getElementById('modalGrid').innerHTML   = `
+    <div class="modal-item"><div class="m-label">UDISE Code</div><div class="m-val" style="font-family:monospace">${s.udise}</div></div>
+    <div class="modal-item"><div class="m-label">District</div><div class="m-val">${s.district}</div></div>
+    <div class="modal-item"><div class="m-label">Block</div><div class="m-val">${s.block}</div></div>
+    <div class="modal-item"><div class="m-label">Thana</div><div class="m-val">${s.thana}</div></div>
+    <div class="modal-item"><div class="m-label">Owned Vehicles</div><div class="m-val">${s.owned}</div></div>
+    <div class="modal-item"><div class="m-label">Affiliated Vehicles</div><div class="m-val">${s.aff}</div></div>
+    <div class="modal-item"><div class="m-label">Transport Coordinator</div><div class="m-val">${s.coord}</div></div>
+    <div class="modal-item"><div class="m-label">Compliance Score</div><div class="m-val">${s.score}%</div></div>`;
+  document.getElementById('schoolModal').classList.add('open');
+}
+function closeModal(e){
+  if(e.target.id==='schoolModal') document.getElementById('schoolModal').classList.remove('open');
+}
+
+renderTable();
+</script>
+</body>
+</html>

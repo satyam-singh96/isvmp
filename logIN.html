@@ -1,0 +1,485 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ISVMP — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1a3a6b;--navy-dark:#152f58;--navy-light:#1e4280;
+  --accent:#2563eb;--white:#fff;
+  --border:#e2e8f0;--text-primary:#0f172a;--text-secondary:#64748b;--text-muted:#94a3b8;
+  --radius:14px;--radius-sm:10px;
+}
+
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;display:flex;min-height:100vh;overflow:hidden}
+
+/* ── LEFT PANEL ── */
+.left{
+  width:50%;
+  background:linear-gradient(160deg,#1a3a6b 0%,#1e4a8a 50%,#1a3a6b 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:48px 48px;
+  position:relative;overflow:hidden;
+}
+
+/* Background circles */
+.left::before{
+  content:'';position:absolute;width:500px;height:500px;border-radius:50%;
+  background:rgba(255,255,255,.03);top:-100px;left:-150px;pointer-events:none;
+}
+.left::after{
+  content:'';position:absolute;width:350px;height:350px;border-radius:50%;
+  background:rgba(255,255,255,.04);bottom:-80px;right:-80px;pointer-events:none;
+}
+
+/* Shield logo */
+.shield-wrap{
+  width:80px;height:80px;border-radius:20px;
+  background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.18);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:28px;
+  box-shadow:0 8px 32px rgba(0,0,0,.15);
+}
+
+.portal-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:30px;font-weight:800;color:#fff;text-align:center;
+  line-height:1.2;margin-bottom:14px;letter-spacing:-.3px;
+}
+.portal-sub{
+  font-size:14px;color:rgba(255,255,255,.65);text-align:center;
+  margin-bottom:40px;font-weight:500;
+}
+
+/* Stat grid */
+.stat-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  width:100%;max-width:380px;
+}
+.stat-box{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);
+  border-radius:var(--radius-sm);padding:18px 20px;text-align:center;
+  backdrop-filter:blur(8px);
+  transition:background .2s;
+}
+.stat-box:hover{background:rgba(255,255,255,.14)}
+.stat-num{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:26px;font-weight:800;color:#fff;display:block;margin-bottom:4px;
+}
+.stat-lbl{font-size:12px;color:rgba(255,255,255,.6);font-weight:500}
+
+/* ── RIGHT PANEL ── */
+.right{
+  width:50%;
+  background:#f4f6fb;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 48px;
+  overflow-y:auto;
+}
+
+.login-card{
+  background:#fff;border-radius:var(--radius);
+  border:1px solid var(--border);
+  width:100%;max-width:420px;
+  padding:32px 32px 24px;
+  box-shadow:0 4px 24px rgba(0,0,0,.06);
+}
+
+.card-title{font-size:20px;font-weight:800;color:var(--text-primary);margin-bottom:4px}
+.card-sub  {font-size:13px;color:var(--text-secondary);margin-bottom:24px}
+
+/* STEP INDICATOR */
+.steps{display:flex;align-items:center;gap:0;margin-bottom:24px}
+.step{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer}
+.step.active{color:var(--accent)}
+.step.done  {color:#15803d}
+.step-dot{width:22px;height:22px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.step-line{flex:1;height:1px;background:var(--border);margin:0 8px}
+
+/* ROLE SELECTION */
+.role-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.role-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);cursor:pointer;
+  transition:border-color .15s,background .15s;
+  background:#fff;
+}
+.role-item:hover{border-color:#bfdbfe;background:#f0f7ff}
+.role-item.selected{border-color:var(--accent);background:#eff6ff}
+.role-radio{
+  width:18px;height:18px;border-radius:50%;
+  border:2px solid var(--border);display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:border-color .15s;
+}
+.role-item.selected .role-radio{border-color:var(--accent);background:var(--accent)}
+.role-item.selected .role-radio::after{content:'';width:6px;height:6px;border-radius:50%;background:#fff}
+.role-item:hover .role-radio{border-color:var(--accent)}
+.role-text{font-size:14px;font-weight:500;color:var(--text-primary)}
+
+/* CONTINUE BUTTON */
+.btn-continue{
+  width:100%;background:#1e3a6b;color:#fff;border:none;
+  border-radius:var(--radius-sm);padding:14px;
+  font-size:15px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  font-family:'DM Sans',sans-serif;
+  transition:background .15s,transform .1s;
+  margin-bottom:6px;
+}
+.btn-continue:hover{background:#152f58}
+.btn-continue:active{transform:scale(.99)}
+.btn-continue:disabled{background:#94a3b8;cursor:not-allowed}
+
+/* OTP SCREEN */
+.otp-screen{display:none}
+.otp-screen.show{display:block}
+.role-screen{display:block}
+.role-screen.hide{display:none}
+
+.back-link{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;
+  background:none;border:none;font-family:'DM Sans',sans-serif;
+  margin-bottom:18px;padding:0;
+}
+.back-link:hover{text-decoration:underline}
+
+.selected-role-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  background:#eff6ff;border:1px solid #bfdbfe;
+  border-radius:20px;padding:5px 12px;
+  font-size:12px;font-weight:600;color:#1d4ed8;
+  margin-bottom:20px;
+}
+
+.otp-label{font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:6px}
+.phone-row{display:flex;gap:8px;margin-bottom:14px}
+.phone-prefix{
+  background:#f1f5f9;border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);padding:11px 14px;
+  font-size:14px;font-weight:700;color:var(--text-primary);
+  white-space:nowrap;
+}
+.phone-input{
+  flex:1;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  padding:11px 14px;font-size:14px;color:var(--text-primary);
+  font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;
+}
+.phone-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+
+/* OTP BOXES */
+.otp-boxes{display:flex;gap:10px;margin-bottom:14px}
+.otp-box{
+  width:48px;height:52px;border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);font-size:20px;font-weight:700;
+  text-align:center;outline:none;color:var(--text-primary);
+  font-family:'Space Grotesk',sans-serif;transition:border-color .15s;
+}
+.otp-box:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.resend-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:20px}
+.resend-btn{color:var(--accent);font-weight:600;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;font-size:12px}
+.resend-btn:hover{text-decoration:underline}
+
+/* FOOTER */
+.right-footer{margin-top:18px;font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6;max-width:420px}
+
+/* PHASE INDICATOR */
+.phase-dot{
+  display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--accent);margin-right:5px;
+}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  html,body{overflow:auto}
+  body{flex-direction:column}
+  .left,.right{width:100%;padding:40px 28px}
+  .left{min-height:55vh}
+  .portal-title{font-size:26px}
+  .stat-grid{max-width:340px}
+  .login-card{max-width:100%}
+}
+@media(max-width:540px){
+  .left{padding:36px 20px;min-height:50vh}
+  .right{padding:28px 20px}
+  .portal-title{font-size:22px}
+  .stat-num{font-size:22px}
+  .login-card{padding:24px 20px}
+  .otp-box{width:42px;height:46px;font-size:18px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── LEFT PANEL ── -->
+<div class="left">
+  <!-- Shield -->
+  <div class="shield-wrap">
+    <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,.9)" stroke-width="1.8">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+  </div>
+
+  <div class="portal-title">Integrated School Vehicle<br/>Monitoring Portal</div>
+  <div class="portal-sub">Government of Uttar Pradesh — Transport Commissioner Office</div>
+
+  <!-- Stats -->
+  <div class="stat-grid">
+    <div class="stat-box">
+      <span class="stat-num" id="c1">0</span>
+      <span class="stat-lbl">Schools Registered</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-num" id="c2">0</span>
+      <span class="stat-lbl">Vehicles Monitored</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-num" id="c3">0</span>
+      <span class="stat-lbl">Districts Covered</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-num" id="c4">0</span>
+      <span class="stat-lbl">Inspections Done</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── RIGHT PANEL ── -->
+<div class="right">
+  <div class="login-card">
+
+    <!-- STEP 1: Role Selection -->
+    <div class="role-screen" id="roleScreen">
+      <div class="card-title">Select Your Role</div>
+      <div class="card-sub">Choose your department to continue login</div>
+
+      <div class="role-list" id="roleList">
+        <div class="role-item" onclick="selectRole(this,'Transport Commissioner Office')">
+          <div class="role-radio"></div>
+          <span class="role-text">Transport Commissioner Office</span>
+        </div>
+        <div class="role-item" onclick="selectRole(this,'RTO / ARTO')">
+          <div class="role-radio"></div>
+          <span class="role-text">RTO / ARTO</span>
+        </div>
+        <div class="role-item" onclick="selectRole(this,'RI / MVI (Inspector)')">
+          <div class="role-radio"></div>
+          <span class="role-text">RI / MVI (Inspector)</span>
+        </div>
+        <div class="role-item" onclick="selectRole(this,'BSA (Education Department)')">
+          <div class="role-radio"></div>
+          <span class="role-text">BSA (Education Department)</span>
+        </div>
+        <div class="role-item" onclick="selectRole(this,'District Administration (DM)')">
+          <div class="role-radio"></div>
+          <span class="role-text">District Administration (DM)</span>
+        </div>
+        <div class="role-item" onclick="selectRole(this,'Police Department')">
+          <div class="role-radio"></div>
+          <span class="role-text">Police Department</span>
+        </div>
+        <div class="role-item" onclick="selectRole(this,'School Management')">
+          <div class="role-radio"></div>
+          <span class="role-text">School Management</span>
+        </div>
+        <div class="role-item" onclick="selectRole(this,'Vendor / Operator')">
+          <div class="role-radio"></div>
+          <span class="role-text">Vendor / Operator</span>
+        </div>
+      </div>
+
+      <button class="btn-continue" id="continueBtn" disabled onclick="goToOTP()">
+        Continue
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+
+    <!-- STEP 2: OTP -->
+    <div class="otp-screen" id="otpScreen">
+      <button class="back-link" onclick="goBack()">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </button>
+
+      <div class="card-title">Enter Mobile Number</div>
+      <div class="card-sub">OTP will be sent to your registered mobile</div>
+
+      <div class="selected-role-chip" id="roleChip">
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="roleChipText">–</span>
+      </div>
+
+      <div id="phoneStep">
+        <div class="otp-label">Mobile Number</div>
+        <div class="phone-row">
+          <div class="phone-prefix">+91</div>
+          <input class="phone-input" id="phoneInput" type="tel" maxlength="10" placeholder="Enter 10-digit number" oninput="checkPhone()"/>
+        </div>
+        <button class="btn-continue" id="sendOtpBtn" disabled onclick="sendOTP()">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.82 19.79 19.79 0 01.1 1.18 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.56-.56a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0120.28 15a2 2 0 011.64 1.92z"/></svg>
+          Send OTP
+        </button>
+      </div>
+
+      <div id="otpStep" style="display:none">
+        <div class="otp-label">Enter OTP</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px" id="otpHint">OTP sent to +91 <span id="maskedPhone">XXXXXXXXXX</span></div>
+        <div class="otp-boxes">
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric" oninput="otpNav(this,0)"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric" oninput="otpNav(this,1)"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric" oninput="otpNav(this,2)"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric" oninput="otpNav(this,3)"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric" oninput="otpNav(this,4)"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric" oninput="otpNav(this,5)"/>
+        </div>
+        <div class="resend-row">
+          <span id="timerTxt">Resend in 30s</span>
+          <button class="resend-btn" id="resendBtn" disabled onclick="resendOTP()">Resend OTP</button>
+        </div>
+        <button class="btn-continue" id="verifyBtn" onclick="verifyOTP()">
+          Verify &amp; Login
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="right-footer">
+    Government of Uttar Pradesh &nbsp;•&nbsp; Transport Commissioner Office &nbsp;•&nbsp; Integrated School Vehicle Monitoring Portal
+  </div>
+</div>
+
+<script>
+// ── COUNTER ANIMATION ──
+const targets = {c1:24856, c2:42891, c3:75, c4:8432};
+const durations = {c1:1800, c2:1800, c3:1200, c4:1600};
+
+function animateCount(id, target, dur) {
+  const el = document.getElementById(id);
+  const start = performance.now();
+  const fmt = n => n >= 10000 ? n.toLocaleString('en-IN') : n.toString();
+  function step(now) {
+    const p = Math.min((now - start) / dur, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(Math.floor(ease * target));
+    if (p < 1) requestAnimationFrame(step);
+    else el.textContent = fmt(target);
+  }
+  requestAnimationFrame(step);
+}
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    Object.keys(targets).forEach(id => animateCount(id, targets[id], durations[id]));
+  }, 300);
+});
+
+// ── ROLE SELECTION ──
+let selectedRole = '';
+function selectRole(el, role) {
+  document.querySelectorAll('.role-item').forEach(r => r.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedRole = role;
+  document.getElementById('continueBtn').disabled = false;
+}
+
+function goToOTP() {
+  if (!selectedRole) return;
+  document.getElementById('roleScreen').classList.add('hide');
+  document.getElementById('otpScreen').classList.add('show');
+  document.getElementById('roleChipText').textContent = selectedRole;
+}
+
+function goBack() {
+  document.getElementById('roleScreen').classList.remove('hide');
+  document.getElementById('otpScreen').classList.remove('show');
+  document.getElementById('phoneStep').style.display = 'block';
+  document.getElementById('otpStep').style.display = 'none';
+  document.getElementById('phoneInput').value = '';
+  document.getElementById('sendOtpBtn').disabled = true;
+  clearInterval(timerInterval);
+}
+
+// ── PHONE INPUT ──
+function checkPhone() {
+  const v = document.getElementById('phoneInput').value;
+  document.getElementById('sendOtpBtn').disabled = !/^\d{10}$/.test(v);
+}
+
+let timerInterval;
+function sendOTP() {
+  const phone = document.getElementById('phoneInput').value;
+  const masked = phone.slice(0,2) + 'XXXXXX' + phone.slice(-2);
+  document.getElementById('maskedPhone').textContent = masked;
+  document.getElementById('phoneStep').style.display = 'none';
+  document.getElementById('otpStep').style.display = 'block';
+  document.querySelectorAll('.otp-box')[0].focus();
+  startTimer(30);
+}
+
+function startTimer(sec) {
+  const timerTxt = document.getElementById('timerTxt');
+  const resendBtn = document.getElementById('resendBtn');
+  resendBtn.disabled = true;
+  let s = sec;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    s--;
+    timerTxt.textContent = `Resend in ${s}s`;
+    if (s <= 0) {
+      clearInterval(timerInterval);
+      timerTxt.textContent = '';
+      resendBtn.disabled = false;
+    }
+  }, 1000);
+}
+
+function resendOTP() {
+  document.querySelectorAll('.otp-box').forEach(b => b.value = '');
+  document.querySelectorAll('.otp-box')[0].focus();
+  startTimer(30);
+}
+
+// ── OTP NAVIGATION ──
+function otpNav(el, idx) {
+  el.value = el.value.replace(/\D/g,'').slice(-1);
+  const boxes = document.querySelectorAll('.otp-box');
+  if (el.value && idx < 5) boxes[idx+1].focus();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Backspace') {
+    const boxes = [...document.querySelectorAll('.otp-box')];
+    const idx = boxes.indexOf(document.activeElement);
+    if (idx > 0 && !boxes[idx].value) {
+      boxes[idx-1].value = '';
+      boxes[idx-1].focus();
+    }
+  }
+});
+
+function verifyOTP() {
+  const otp = [...document.querySelectorAll('.otp-box')].map(b=>b.value).join('');
+  if (otp.length < 6) {
+    document.querySelectorAll('.otp-box').forEach(b => b.style.borderColor = '#ef4444');
+    setTimeout(() => document.querySelectorAll('.otp-box').forEach(b => b.style.borderColor = ''), 1500);
+    return;
+  }
+  const btn = document.getElementById('verifyBtn');
+  btn.textContent = 'Verifying...';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.innerHTML = '✓ Logged In — Redirecting';
+    btn.style.background = '#15803d';
+  }, 1200);
+}
+</script>
+</body>
+</html>
